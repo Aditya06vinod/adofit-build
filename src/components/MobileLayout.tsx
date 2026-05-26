@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import BottomNav from "./BottomNav";
+import SafeAreaView from "./ui/SafeAreaView";
 
 const MobileLayout = ({ children, hideNav }: { children: ReactNode; hideNav?: boolean }) => {
   const { pathname } = useLocation();
@@ -10,10 +11,10 @@ const MobileLayout = ({ children, hideNav }: { children: ReactNode; hideNav?: bo
   }, [pathname]);
 
   return (
-    <div className="mx-auto min-h-screen max-w-md bg-background">
-      <div className={hideNav ? "" : "pb-20"}>{children}</div>
+    <SafeAreaView className="bg-background">
+      <div className={`flex-1 ${hideNav ? "" : "pb-20"}`}>{children}</div>
       {!hideNav && <BottomNav />}
-    </div>
+    </SafeAreaView>
   );
 };
 

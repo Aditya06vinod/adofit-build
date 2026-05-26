@@ -8,6 +8,8 @@ import Index from "./pages/Index";
 import DietTracker from "./pages/DietTracker";
 import DietInsight from "./pages/DietInsight";
 import WorkoutTracker from "./pages/WorkoutTracker";
+import WorkoutDashboard from "./pages/WorkoutDashboard";
+import Progress from "./pages/Progress";
 import Profile from "./pages/Profile";
 import Plans from "./pages/Plans";
 import Workouts from "./pages/Workouts";
@@ -18,8 +20,10 @@ import BodySelector from "./pages/BodySelector";
 import Settings from "./pages/Settings";
 import GrowthStatus from "./pages/GrowthStatus";
 import SleepSchedule from "./pages/SleepSchedule";
+import Log from "./pages/Log";
 import Install from "./pages/Install";
 import Welcome from "./pages/Welcome";
+import PostureCoach from "./pages/PostureCoach";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,7 +46,10 @@ const App = () => (
             <Route path="/" element={<RequireOnboarding><Index /></RequireOnboarding>} />
             <Route path="/diet" element={<RequireOnboarding><DietTracker /></RequireOnboarding>} />
             <Route path="/diet-insight" element={<RequireOnboarding><DietInsight /></RequireOnboarding>} />
-            <Route path="/workout" element={<RequireOnboarding><WorkoutTracker /></RequireOnboarding>} />
+            <Route path="/log" element={<RequireOnboarding><Log /></RequireOnboarding>} />
+            <Route path="/workout" element={<RequireOnboarding><WorkoutDashboard /></RequireOnboarding>} />
+            <Route path="/workout-active" element={<RequireOnboarding><WorkoutTracker /></RequireOnboarding>} />
+            <Route path="/progress" element={<RequireOnboarding><Progress /></RequireOnboarding>} />
             <Route path="/profile" element={<RequireOnboarding><Profile /></RequireOnboarding>} />
             <Route path="/plans" element={<RequireOnboarding><Plans /></RequireOnboarding>} />
             <Route path="/workouts" element={<RequireOnboarding><Workouts /></RequireOnboarding>} />
@@ -54,6 +61,7 @@ const App = () => (
             <Route path="/growth" element={<RequireOnboarding><GrowthStatus /></RequireOnboarding>} />
             <Route path="/sleep" element={<RequireOnboarding><SleepSchedule /></RequireOnboarding>} />
             <Route path="/install" element={<RequireOnboarding><Install /></RequireOnboarding>} />
+            <Route path="/posture-coach" element={<RequireOnboarding><PostureCoach /></RequireOnboarding>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

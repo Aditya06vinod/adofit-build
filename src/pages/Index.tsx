@@ -1,429 +1,365 @@
-import { Dumbbell, UtensilsCrossed, ArrowRight, ChevronRight, Flame, Target, Bell, X, Plus, Trash2, TrendingUp, Settings, UserCircle, Clock, CheckCircle, Apple, Download } from "lucide-react";
+import { Bell, Flame, Clock, UtensilsCrossed, Dumbbell, Check, Sparkles, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import MobileLayout from "@/components/MobileLayout";
-import ProgressRing from "@/components/ProgressRing";
-import { useToast } from "@/hooks/use-toast";
+import { animalAvatars } from "@/data/avatars";
 
-interface Reminder {
-  id: string;
-  label: string;
-  time: string;
-  enabled: boolean;
+interface TodayWorkout {
+  title: string;
+  subtitle: string;
+  image: string;
+  exercises: { name: string; sets: number; reps: number }[];
 }
 
-const bodyParts = [
-  { id: "chest", emoji: "🫁", label: "Chest" },
-  { id: "back", emoji: "🔙", label: "Back" },
-  { id: "shoulders", emoji: "🤷", label: "Shoulders" },
-  { id: "arms", emoji: "💪", label: "Arms" },
-  { id: "forearms", emoji: "🦾", label: "Forearms" },
-  { id: "legs", emoji: "🦵", label: "Quads" },
-  { id: "hamstrings", emoji: "🦿", label: "Hamstrings" },
-  { id: "core", emoji: "🔥", label: "Core" },
-  { id: "obliques", emoji: "↔️", label: "Obliques" },
-  { id: "glutes", emoji: "🍑", label: "Glutes" },
-  { id: "calves", emoji: "🏔️", label: "Calves" },
-  { id: "neck", emoji: "🦴", label: "Neck" },
-  { id: "traps", emoji: "🔺", label: "Traps" },
-  { id: "lats", emoji: "🔱", label: "Lats" },
-  { id: "lower-back", emoji: "⬇️", label: "Lower Back" },
-  { id: "hip-flexors", emoji: "🧘", label: "Hip Flexors" },
-  { id: "rear-delts", emoji: "🎯", label: "Rear Delts" },
-];
-
-import { animalAvatars, avatarCategories } from "@/data/avatars";
-
-interface WorkoutHistoryEntry {
-  id: string;
-  name: string;
-  date: string;
-  duration: string;
-  calories: number;
-  bodyPart: string;
-}
-
-const defaultWorkoutHistory: WorkoutHistoryEntry[] = [
-  { id: "1", name: "Upper Body Blast", date: "Today", duration: "35 min", calories: 280, bodyPart: "💪" },
-  { id: "2", name: "Core Destroyer", date: "Yesterday", duration: "20 min", calories: 180, bodyPart: "🔥" },
-  { id: "3", name: "Leg Day Crusher", date: "2 days ago", duration: "40 min", calories: 350, bodyPart: "🦵" },
-  { id: "4", name: "Cardio HIIT", date: "3 days ago", duration: "25 min", calories: 400, bodyPart: "🏃" },
-  { id: "5", name: "Morning Stretch", date: "4 days ago", duration: "15 min", calories: 80, bodyPart: "🧘" },
-];
-
-const defaultReminders: Reminder[] = [
-  { id: "1", label: "Morning Workout", time: "07:00", enabled: true },
-  { id: "2", label: "Protein Shake", time: "08:00", enabled: false },
-  { id: "3", label: "Stretch Break", time: "12:00", enabled: true },
-  { id: "4", label: "Evening Run", time: "18:00", enabled: false },
-  { id: "5", label: "Hydration Check", time: "10:00", enabled: true },
+const workoutSchedule: TodayWorkout[] = [
+  {
+    // 0: Sunday
+    title: "Rest & Stretch",
+    subtitle: "20 mins • Easy • 5 Exercises",
+    image: "/cardio_workout.png",
+    exercises: [
+      { name: "Hamstring Stretch", sets: 2, reps: 30 },
+      { name: "Quad Stretch", sets: 2, reps: 30 },
+      { name: "Child's Pose", sets: 1, reps: 60 },
+      { name: "Cat-Cow Flow", sets: 1, reps: 10 },
+      { name: "Sun Salutation", sets: 5, reps: 1 },
+    ]
+  },
+  {
+    // 1: Monday
+    title: "Chest & Triceps",
+    subtitle: "40 mins • Intermediate • 4 Exercises",
+    image: "/chest_workout.png",
+    exercises: [
+      { name: "Flat Bench Press", sets: 4, reps: 10 },
+      { name: "Incline DB Press", sets: 3, reps: 12 },
+      { name: "Cable Chest Flyes", sets: 3, reps: 12 },
+      { name: "Tricep Pushdowns", sets: 3, reps: 12 },
+    ]
+  },
+  {
+    // 2: Tuesday
+    title: "Back & Biceps",
+    subtitle: "45 mins • Intermediate • 4 Exercises",
+    image: "/back_workout.png",
+    exercises: [
+      { name: "Lat Pulldown", sets: 4, reps: 12 },
+      { name: "Seated Cable Row", sets: 3, reps: 12 },
+      { name: "Barbell Bicep Curls", sets: 3, reps: 12 },
+      { name: "Hammer Curls", sets: 3, reps: 12 },
+    ]
+  },
+  {
+    // 3: Wednesday
+    title: "Cardio HIIT",
+    subtitle: "25 mins • Hard • 5 Exercises",
+    image: "/cardio_workout.png",
+    exercises: [
+      { name: "Burpees", sets: 4, reps: 10 },
+      { name: "Jump Squats", sets: 4, reps: 12 },
+      { name: "High Knees", sets: 3, reps: 30 },
+      { name: "Sprint Intervals", sets: 5, reps: 20 },
+      { name: "Jump Rope", sets: 3, reps: 60 },
+    ]
+  },
+  {
+    // 4: Thursday
+    title: "Leg Day Crusher",
+    subtitle: "45 mins • Intermediate • 5 Exercises",
+    image: "/leg_workout.png",
+    exercises: [
+      { name: "Squats", sets: 4, reps: 12 },
+      { name: "Lunges", sets: 3, reps: 10 },
+      { name: "Leg Press", sets: 4, reps: 10 },
+      { name: "Calf Raises", sets: 4, reps: 20 },
+      { name: "Deadlifts", sets: 4, reps: 8 },
+    ]
+  },
+  {
+    // 5: Friday
+    title: "Shoulder Shred",
+    subtitle: "35 mins • Hard • 5 Exercises",
+    image: "/chest_workout.png",
+    exercises: [
+      { name: "Military Press", sets: 4, reps: 8 },
+      { name: "Arnold Press", sets: 3, reps: 10 },
+      { name: "Lateral Raises", sets: 4, reps: 12 },
+      { name: "Rear Delt Fly", sets: 3, reps: 12 },
+      { name: "Shrugs", sets: 4, reps: 15 },
+    ]
+  },
+  {
+    // 6: Saturday
+    title: "Core Destroyer",
+    subtitle: "20 mins • Medium • 5 Exercises",
+    image: "/cardio_workout.png",
+    exercises: [
+      { name: "Plank Hold", sets: 3, reps: 60 },
+      { name: "Crunches", sets: 3, reps: 20 },
+      { name: "Russian Twists", sets: 3, reps: 15 },
+      { name: "Leg Raises", sets: 3, reps: 15 },
+      { name: "Mountain Climbers", sets: 3, reps: 30 },
+    ]
+  }
 ];
 
 const Index = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [showReminders, setShowReminders] = useState(false);
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-  const [selectedAvatar, setSelectedAvatar] = useState(() => localStorage.getItem("ado-avatar") || "wolf");
-  const [bouncingId, setBouncingId] = useState<string | null>(null);
-  const [reminders, setReminders] = useState<Reminder[]>(() => {
-    const saved = localStorage.getItem("ado-reminders");
-    return saved ? JSON.parse(saved) : defaultReminders;
-  });
-  const [newLabel, setNewLabel] = useState("");
-  const [newTime, setNewTime] = useState("09:00");
-  const [workoutHistory] = useState<WorkoutHistoryEntry[]>(() => {
-    const saved = localStorage.getItem("ado-workout-history");
-    return saved ? JSON.parse(saved) : defaultWorkoutHistory;
-  });
-
-  // Mark today as active for tracking
-  useEffect(() => {
-    const today = new Date().toISOString().split("T")[0];
-    const saved = localStorage.getItem("ado-active-days");
-    const days: string[] = saved ? JSON.parse(saved) : [];
-    if (!days.includes(today)) {
-      days.push(today);
-      localStorage.setItem("ado-active-days", JSON.stringify(days));
-    }
-  }, []);
-
-  useEffect(() => { localStorage.setItem("ado-reminders", JSON.stringify(reminders)); }, [reminders]);
-
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") Notification.requestPermission();
-    const intervals: ReturnType<typeof setInterval>[] = [];
-    reminders.filter(r => r.enabled).forEach(r => {
-      const iv = setInterval(() => {
-        const now = new Date();
-        const [h, m] = r.time.split(":").map(Number);
-        if (now.getHours() === h && now.getMinutes() === m && now.getSeconds() === 0) {
-          if ("Notification" in window && Notification.permission === "granted") new Notification("Ado Work Reminder", { body: r.label });
-        }
-      }, 1000);
-      intervals.push(iv);
-    });
-    return () => intervals.forEach(clearInterval);
-  }, [reminders]);
-
-  const addReminder = () => {
-    if (!newLabel.trim()) return;
-    setReminders(prev => [...prev, { id: Date.now().toString(), label: newLabel, time: newTime, enabled: true }]);
-    setNewLabel(""); setNewTime("09:00");
-    toast({ title: "Reminder set!", description: `${newLabel} at ${newTime}` });
-  };
-
-  const handleBodyPartClick = (id: string) => {
-    setBouncingId(id);
-    setTimeout(() => { setBouncingId(null); navigate(`/body/${id}`); }, 400);
-  };
-
-  const handleAvatarSelect = (id: string) => {
-    setBouncingId(id);
-    setTimeout(() => {
-      setSelectedAvatar(id);
-      localStorage.setItem("ado-avatar", id);
-      setBouncingId(null);
-      setShowAvatarPicker(false);
-      toast({ title: "Avatar updated!", description: `You are now ${animalAvatars.find(a => a.id === id)?.name}` });
-    }, 400);
-  };
-
+  const [selectedAvatar] = useState(() => localStorage.getItem("ado-avatar") || "wolf");
   const currentAvatar = animalAvatars.find(a => a.id === selectedAvatar) || animalAvatars[0];
-  const userName = localStorage.getItem("ado-user-name") || currentAvatar.name;
+  const userName = localStorage.getItem("ado-user-name") || "Alex Johnson";
 
-  // Compute real data from onboarding + tracking
-  const userWeight = parseInt(localStorage.getItem("ado-user-weight") || "70");
-  const userGoal = localStorage.getItem("ado-user-goal") || "";
-  const goalAdjust: Record<string, number> = { lose: -500, gain: 300, maintain: 0, endurance: 200, flexibility: -200, strength: 400 };
-  const dailyCalorieTarget = userWeight * 30 + (goalAdjust[userGoal] || 0);
-  const dailyBurnTarget = Math.round(dailyCalorieTarget * 0.25);
+  const today = new Date();
+  const dateString = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
+  const dayOfWeekIndex = today.getDay(); // 0 is Sunday, 1 is Monday ... 6 is Saturday
+  
+  const daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-  const dietLog: { date: string; calories: number }[] = JSON.parse(localStorage.getItem("ado-diet-log") || "[]");
-  const today = new Date().toISOString().split("T")[0];
-  const todayCalories = dietLog.filter(l => l.date === today).reduce((s, l) => s + l.calories, 0);
+  // Interactive Streak Days state
+  const [checkedDays, setCheckedDays] = useState<boolean[]>(() => {
+    const saved = localStorage.getItem("ado-home-streak-days");
+    return saved ? JSON.parse(saved) : [true, true, false, true, false, false, false];
+  });
 
-  const workoutLog: { date: string; calories: number }[] = JSON.parse(localStorage.getItem("ado-workout-log") || "[]");
-  const todayBurnt = workoutLog.filter(l => l.date === today).reduce((s, l) => s + l.calories, 0);
+  const toggleDay = (index: number) => {
+    const next = [...checkedDays];
+    next[index] = !next[index];
+    setCheckedDays(next);
+    localStorage.setItem("ado-home-streak-days", JSON.stringify(next));
+  };
 
-  const goalProgress = dailyCalorieTarget > 0 ? Math.min(100, Math.round((todayCalories / dailyCalorieTarget) * 100)) : 0;
+  // Redesigned dynamic progress ring parameters
+  const progressPercent = 0.75;
+  const angle = (progressPercent * 360 - 90) * (Math.PI / 180);
+  const dotX = 50 + 40 * Math.cos(angle);
+  const dotY = 50 + 40 * Math.sin(angle);
 
-  const activeDaysList: string[] = JSON.parse(localStorage.getItem("ado-active-days") || "[]");
-  const userLevel = Math.max(1, Math.floor(activeDaysList.length / 7));
-  const totalSessions = activeDaysList.length;
+  // Dynamic workout schedule based on current day
+  const todayWorkout = workoutSchedule[dayOfWeekIndex];
 
   return (
     <MobileLayout>
-      <div className="animate-fade-in space-y-5 px-4 pt-6">
+      <div className="min-h-screen bg-background text-foreground px-5 pt-12 pb-28 font-sans">
+        
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <button onClick={() => navigate("/growth")} className="flex items-center gap-2 rounded-full border border-border px-3 py-2 transition-transform active:scale-95">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            <span className="text-[10px] font-bold">Lvl {userLevel}</span>
-          </button>
-          <h1 className="text-lg font-bold">Ado Work</h1>
-          <div className="flex items-center gap-2">
-            <button onClick={() => navigate("/install")} className="rounded-full border border-border p-2 transition-transform active:scale-95">
-              <Download className="h-4 w-4" />
-            </button>
-            <button onClick={() => navigate("/settings")} className="rounded-full border border-border p-2 transition-transform active:scale-95">
-              <Settings className="h-4 w-4" />
-            </button>
-            <button onClick={() => setShowReminders(true)} className="relative rounded-full border border-border p-2 transition-transform active:scale-95">
-              <Bell className="h-4 w-4" />
-              {reminders.filter(r => r.enabled).length > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground">
-                  {reminders.filter(r => r.enabled).length}
-                </span>
-              )}
-            </button>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-full overflow-hidden border border-border bg-card flex items-center justify-center text-2xl">
+              {currentAvatar.emoji}
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground font-medium tracking-wider">{dateString}</p>
+              <h1 className="text-lg font-bold">Hello, {userName}</h1>
+            </div>
           </div>
+          <button className="h-10 w-10 rounded-full bg-card flex items-center justify-center border border-border/40">
+            <Bell className="h-5 w-5 text-muted-foreground" />
+          </button>
         </div>
 
-        {/* Avatar + Greeting */}
-        <div className="flex items-center gap-3">
-          <button onClick={() => setShowAvatarPicker(true)} className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-2xl transition-transform active:scale-90 hover:scale-105">
-            {currentAvatar.emoji}
-          </button>
+        {/* Daily Goal Card (Redesigned progress bar/ring) */}
+        <div className="bg-card rounded-[24px] p-6 mb-4 flex items-center justify-between shadow-sm border border-border/30">
           <div>
-            <p className="text-sm font-bold">Hey, {userName}! 💪</p>
-            <p className="text-[10px] text-muted-foreground">Today's workout: {localStorage.getItem("ado-user-workout-duration") || "45"} min · {(() => { const g = localStorage.getItem("ado-user-goal"); const map: Record<string, string> = { lose: "Burn fat", gain: "Build muscle", maintain: "Stay fit", endurance: "Cardio", flexibility: "Mobility", strength: "Strength" }; return map[g || ""] || "Stay active"; })()}</p>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-3">
-          <button onClick={() => navigate("/workout")} className="flex flex-1 items-center gap-2 rounded-full gym-gradient-orange px-4 py-3 text-sm font-semibold text-primary-foreground transition-transform active:scale-95">
-            <Dumbbell className="h-4 w-4" /> Track Workout
-          </button>
-          <button onClick={() => navigate("/diet")} className="flex flex-1 items-center gap-2 rounded-full gym-gradient-orange px-4 py-3 text-sm font-semibold text-primary-foreground transition-transform active:scale-95">
-            <UtensilsCrossed className="h-4 w-4" /> Track Diet
-          </button>
-        </div>
-
-        {/* Track Your Goal */}
-        <div>
-          <h2 className="mb-3 text-lg font-bold">Track your goal</h2>
-          <div className="gym-gradient-card rounded-2xl p-4">
-            <div className="flex items-center gap-4">
-              <ProgressRing progress={goalProgress} size={70} strokeWidth={5} />
-              <div className="flex-1 space-y-3">
-                <button onClick={() => navigate("/diet-insight")} className="flex w-full items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20"><UtensilsCrossed className="h-3.5 w-3.5 text-primary" /></div>
-                    <div className="text-left">
-                      <p className="text-sm font-bold"><span className="text-foreground">{todayCalories.toLocaleString()}</span><span className="text-muted-foreground text-xs">/{dailyCalorieTarget.toLocaleString()} Kcal</span></p>
-                      <p className="text-[10px] text-muted-foreground">Calories Consumed</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </button>
-                <button onClick={() => navigate("/diet-insight")} className="flex w-full items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gym-green/20"><Flame className="h-3.5 w-3.5 text-gym-green" /></div>
-                    <div className="text-left">
-                      <p className="text-sm font-bold"><span className="text-foreground">{todayBurnt.toLocaleString()}</span><span className="text-muted-foreground text-xs">/{dailyBurnTarget.toLocaleString()} Kcal</span></p>
-                      <p className="text-[10px] text-muted-foreground">Calories Burnt</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </button>
-              </div>
+            <p className="text-[10px] text-muted-foreground font-bold tracking-wider mb-1">DAILY GOAL</p>
+            <h2 className="text-[42px] font-extrabold leading-none mb-3">{Math.round(progressPercent * 100)}%</h2>
+            <div className="bg-[#2D452B] text-[#58D66D] text-[10px] font-bold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5">
+              <Flame className="h-3 w-3" fill="currentColor" />
+              15 Day Streak
             </div>
           </div>
-        </div>
-
-        {/* Diet Plan Card */}
-        <button onClick={() => navigate("/diet-plan")} className="w-full relative overflow-hidden gym-gradient-card rounded-2xl p-4 transition-transform active:scale-[0.98]">
-          <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/10" />
-          <div className="absolute -right-2 bottom--2 h-16 w-16 rounded-full bg-primary/5" />
-          <div className="relative flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/15">
-              <Apple className="h-6 w-6 text-primary" />
-            </div>
-            <div className="flex-1 text-left">
-              <p className="text-sm font-bold">Diet Plan</p>
-              <p className="text-[10px] text-muted-foreground">Personalized meal plans with macro tracking</p>
-              <div className="mt-1.5 flex items-center gap-1.5">
-                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[8px] font-bold text-primary">6 diet types</span>
-                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[8px] font-bold text-primary">4 goals</span>
-                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[8px] font-bold text-primary">Full macros</span>
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          </div>
-        </button>
-
-        {/* Select My Work */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-bold">Select My Work</h2>
-            <button onClick={() => navigate("/body-selector")} className="flex items-center gap-1 text-[10px] font-semibold text-primary">
-              <UserCircle className="h-3.5 w-3.5" /> Full Body Model <ChevronRight className="h-3 w-3" />
-            </button>
-          </div>
-          <button onClick={() => navigate("/body-selector")} className="w-full gym-gradient-card rounded-2xl p-4 transition-transform active:scale-[0.98]">
-            <div className="flex items-center gap-4">
-              <svg viewBox="0 0 80 140" className="h-24 w-16 shrink-0 body-glow">
-                <ellipse cx="40" cy="12" rx="8" ry="10" className="fill-primary/30 stroke-primary/50 muscle-breathe" strokeWidth="1" />
-                <rect x="30" y="22" width="20" height="40" rx="5" className="fill-primary/20 stroke-primary/50 body-pulse" strokeWidth="1" />
-                <rect x="15" y="26" width="10" height="30" rx="4" className="fill-primary/15 stroke-primary/40 body-pulse" strokeWidth="1" style={{ animationDelay: "0.5s" }} />
-                <rect x="55" y="26" width="10" height="30" rx="4" className="fill-primary/15 stroke-primary/40 body-pulse" strokeWidth="1" style={{ animationDelay: "0.7s" }} />
-                <rect x="30" y="64" width="10" height="35" rx="4" className="fill-primary/15 stroke-primary/40 body-pulse" strokeWidth="1" style={{ animationDelay: "0.3s" }} />
-                <rect x="42" y="64" width="10" height="35" rx="4" className="fill-primary/15 stroke-primary/40 body-pulse" strokeWidth="1" style={{ animationDelay: "0.6s" }} />
-                <ellipse cx="35" cy="103" rx="6" ry="3" className="fill-primary/10 stroke-primary/30" strokeWidth="0.5" />
-                <ellipse cx="47" cy="103" rx="6" ry="3" className="fill-primary/10 stroke-primary/30" strokeWidth="0.5" />
+          
+          {/* Redesigned Progress Circle with Gradient & Pulsing Glowing Tip */}
+          <div className="relative h-[110px] w-[110px] filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.15)]">
+            <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
+              <defs>
+                <linearGradient id="goalRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#10B981" />
+                  <stop offset="100%" stopColor="#58D66D" />
+                </linearGradient>
+              </defs>
+              <circle cx="50" cy="50" r="40" className="stroke-muted/20" fill="none" strokeWidth="10" />
+              <circle 
+                cx="50" 
+                cy="50" 
+                r="40" 
+                stroke="url(#goalRingGrad)" 
+                fill="none" 
+                strokeWidth="10" 
+                strokeDasharray="251.2" 
+                strokeDashoffset={251.2 * (1 - progressPercent)} 
+                strokeLinecap="round" 
+              />
+              {/* Glowing endpoint dot */}
+              <circle 
+                cx={dotX} 
+                cy={dotY} 
+                r="5.5" 
+                fill="#58D66D" 
+                className="shadow-lg animate-pulse" 
+                style={{ filter: "drop-shadow(0px 0px 4px #58D66D)" }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <svg width="16" height="24" viewBox="0 0 16 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14.6292 9.07185C14.7354 8.89512 14.686 8.64731 14.5204 8.50853L1.51733 0.203875C1.1963 -0.0653556 0.702737 0.170566 0.718919 0.585521L1.24044 14.0487C1.24838 14.2541 1.4587 14.394 1.64417 14.3168L6.46743 12.3087C6.67139 12.2238 6.90159 12.3276 6.98399 12.5312L10.3546 20.8407C10.4578 21.0954 10.8288 21.1118 10.9547 20.8679L14.6292 9.07185Z" stroke="#58D66D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <div className="flex-1">
-                <p className="text-sm font-bold">Tap to select body part</p>
-                <p className="text-[10px] text-muted-foreground mt-1">Interactive body model with equipment selection</p>
-                <div className="mt-2 flex items-center gap-1">
-                  <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[8px] font-bold text-primary">11 body parts</span>
-                  <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[8px] font-bold text-primary">8 equipment</span>
-                </div>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </div>
-          </button>
+          </div>
         </div>
 
-        {/* Target Body Part Grid */}
-        <div>
-          <h2 className="mb-3 text-sm font-bold">Target Body Part</h2>
-          <div className="grid grid-cols-4 gap-2">
-            {bodyParts.map(part => (
-              <button key={part.id} onClick={() => handleBodyPartClick(part.id)}
-                className={`gym-gradient-card flex flex-col items-center gap-1.5 rounded-2xl p-2.5 transition-all ${
-                  bouncingId === part.id ? "animate-bounce scale-110" : "active:scale-95"
-                }`}
+        {/* Calories & Active Time (Redirect to food log page on tap) */}
+        <div className="space-y-3 mb-8">
+          <div 
+            onClick={() => navigate('/diet')}
+            className="bg-card rounded-[20px] p-5 border border-border/30 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all"
+            title="Tap to log food"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Flame className="h-5 w-5 text-[#FF8A4C]" fill="currentColor" />
+                <span className="font-bold text-sm">Calories Burned</span>
+              </div>
+              <span className="text-xs"><span className="font-bold text-sm">450</span><span className="text-muted-foreground">/600 kcal</span></span>
+            </div>
+            <div className="h-2 w-full bg-[#2A231E] rounded-full overflow-hidden">
+              <div className="h-full bg-[#FF8A4C] rounded-full" style={{ width: '75%' }}></div>
+            </div>
+          </div>
+
+          <div 
+            onClick={() => navigate('/diet')}
+            className="bg-card rounded-[20px] p-5 border border-border/30 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all"
+            title="Tap to log food"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-[#A5C0F3]" />
+                <span className="font-bold text-sm">Active Time</span>
+              </div>
+              <span className="text-xs"><span className="font-bold text-sm">48</span><span className="text-muted-foreground">/60 min</span></span>
+            </div>
+            <div className="h-2 w-full bg-[#202532] rounded-full overflow-hidden">
+              <div className="h-full bg-[#A5C0F3] rounded-full" style={{ width: '80%' }}></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Today's Nutrition (Redirect to food log page on tap) */}
+        <div className="mb-8">
+          <h2 className="text-[17px] font-bold mb-4">Today's Nutrition</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div 
+              onClick={() => navigate('/diet')}
+              className="bg-card rounded-[20px] p-5 pb-6 border border-border/30 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all"
+              title="Tap to log food"
+            >
+              <div className="h-10 w-10 rounded-xl bg-[#2A1E18] flex items-center justify-center mb-5">
+                <UtensilsCrossed className="h-5 w-5 text-[#FF8A4C]" fill="currentColor" />
+              </div>
+              <p className="text-[28px] font-extrabold leading-none mb-1.5">1,840</p>
+              <p className="text-[11px] text-muted-foreground">Calories (kcal)</p>
+            </div>
+            <div 
+              onClick={() => navigate('/diet')}
+              className="bg-card rounded-[20px] p-5 pb-6 border border-border/30 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all"
+              title="Tap to log food"
+            >
+              <div className="h-10 w-10 rounded-xl bg-[#1C253C] flex items-center justify-center mb-5">
+                <Dumbbell className="h-5 w-5 text-[#4A85F6]" fill="currentColor" />
+              </div>
+              <p className="text-[28px] font-extrabold leading-none mb-1.5">142g</p>
+              <p className="text-[11px] text-muted-foreground">Protein (Target 160g)</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Last 7 Days Streak (Interactive clickable toggles) */}
+        <div className="mb-8 bg-card rounded-[24px] p-5 border border-border/30 shadow-sm">
+          <h2 className="text-[17px] font-bold mb-4">Last 7 Days Streak</h2>
+          <div className="flex justify-between items-center px-1">
+            {daysOfWeek.map((day, i) => (
+              <button 
+                key={i} 
+                onClick={() => toggleDay(i)}
+                className="flex flex-col items-center gap-2 group outline-none"
+                title={`Toggle ${day}`}
               >
-                <span className="text-xl">{part.emoji}</span>
-                <span className="text-[9px] font-semibold">{part.label}</span>
+                <span className="text-xs text-muted-foreground font-semibold group-hover:text-foreground transition-colors">{day}</span>
+                <div className={`h-11 w-11 rounded-full flex items-center justify-center border transition-all duration-300 ${
+                  checkedDays[i] 
+                    ? 'bg-[#1C64F2] border-[#1C64F2] text-white scale-105 shadow-md shadow-blue-500/20 active:scale-95' 
+                    : 'bg-secondary/40 border-border hover:border-muted-foreground/45 active:scale-90'
+                }`}>
+                  {checkedDays[i] ? (
+                    <Check className="h-6 w-6 text-white" strokeWidth={3.5} />
+                  ) : (
+                    <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30 group-hover:bg-muted-foreground/60 transition-colors" />
+                  )}
+                </div>
               </button>
             ))}
           </div>
         </div>
 
-        {/* Workout History */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-bold">Workout History</h2>
-            <button onClick={() => navigate("/workout")} className="text-[10px] font-semibold text-primary flex items-center gap-1">
-              View All <ChevronRight className="h-3 w-3" />
-            </button>
-          </div>
-          <div className="space-y-2">
-            {workoutHistory.slice(0, 4).map(entry => (
-              <div key={entry.id} className="flex items-center gap-3 gym-gradient-card rounded-2xl p-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-xl">{entry.bodyPart}</div>
-                <div className="flex-1">
-                  <p className="text-xs font-bold">{entry.name}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[9px] text-muted-foreground flex items-center gap-0.5"><Clock className="h-2.5 w-2.5" />{entry.duration}</span>
-                    <span className="text-[9px] text-muted-foreground flex items-center gap-0.5"><Flame className="h-2.5 w-2.5" />{entry.calories} cal</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-[9px] text-muted-foreground">{entry.date}</p>
-                  <CheckCircle className="h-3.5 w-3.5 text-primary mt-0.5 ml-auto" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-
-        {/* My Fitness Goal */}
-        <div className="gym-gradient-card overflow-hidden rounded-2xl">
-          <div className="gym-gradient-orange py-3 text-center">
-            <h3 className="text-sm font-bold text-primary-foreground">My Fitness Goal</h3>
-          </div>
-          <div className="relative p-4">
-            <div className="absolute right-3 top-3 rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-semibold text-primary">{totalSessions > 0 ? `${Math.min(100, Math.round((totalSessions / 365) * 100))}%` : "0%"}</div>
-            <div className="flex items-center gap-8">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20"><Target className="h-4 w-4 text-primary" /></div>
-                <div>
-                  <p className="text-xl font-bold">{totalSessions}<span className="text-xs text-muted-foreground">/365</span></p>
-                  <p className="text-[10px] text-muted-foreground">Active Days</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20"><Target className="h-4 w-4 text-primary" /></div>
-                <div>
-                  <p className="text-xl font-bold">{(() => { const g = localStorage.getItem("ado-user-goal"); const map: Record<string, string> = { lose: "🔥 Lose", gain: "💪 Gain", maintain: "⚖️ Keep", endurance: "🏃 Cardio", flexibility: "🧘 Flex", strength: "🏋️ Strong" }; return map[g || ""] || "🎯 Fit"; })()}</p>
-                  <p className="text-[10px] text-muted-foreground">Current Goal</p>
-                </div>
-              </div>
+        {/* Today's Session (Changes dynamically based on day) */}
+        <div className="mb-4">
+          <div className="bg-card rounded-[24px] p-6 relative overflow-hidden flex flex-col min-h-[220px] border border-border/30 shadow-sm">
+            <div className="z-10 w-3/5">
+              <p className="text-[10px] text-muted-foreground font-bold tracking-[0.15em] mb-2 uppercase">TODAY'S SESSION</p>
+              <h2 className="text-[30px] font-bold leading-[1.1] mb-2">{todayWorkout.title}</h2>
+              <p className="text-[12px] text-muted-foreground mb-8 mt-1">{todayWorkout.subtitle}</p>
             </div>
-            <button onClick={() => navigate("/diet-insight")} className="mt-4 flex w-full items-center justify-center gap-1 rounded-lg border border-border py-2.5 text-xs font-semibold text-foreground transition-colors active:bg-secondary">
-              View Goal Analysis <ArrowRight className="h-3 w-3" />
+            <button 
+              onClick={() => navigate('/workout-active', {
+                state: {
+                  routineName: todayWorkout.title,
+                  exercises: todayWorkout.exercises.map(ex => ({ ...ex, completed: false }))
+                }
+              })}
+              className="z-10 bg-[#1C64F2] text-white text-[15px] font-bold py-3.5 px-8 rounded-full w-[130px] shadow-lg shadow-blue-500/20 active:scale-95 transition-transform"
+            >
+              Start
             </button>
+            
+            {/* Background Image with Dynamic Gradient Overlay */}
+            <div className="absolute right-0 bottom-0 top-0 h-full w-[45%] pointer-events-none overflow-hidden rounded-r-[24px]">
+              <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-card to-transparent z-10" />
+              <div className="absolute inset-0 bg-card/25 z-10" />
+              <img src={todayWorkout.image} alt={todayWorkout.title} className="h-full w-full object-cover object-center" />
+            </div>
           </div>
         </div>
+
+        {/* AI Posture Coach Banner Card */}
+        <div className="mb-4">
+          <div 
+            onClick={() => navigate('/posture-coach')}
+            className="bg-gradient-to-br from-[#1C64F2]/10 via-[#10B981]/5 to-transparent border border-[#1C64F2]/20 rounded-[24px] p-6 relative overflow-hidden flex flex-col min-h-[170px] shadow-sm hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer"
+          >
+            <div className="z-10 w-3/4">
+              <div className="flex items-center gap-1 bg-[#1C64F2]/15 border border-[#1C64F2]/25 text-[#4A85F6] text-[8px] font-black tracking-wider uppercase px-2.5 py-1 rounded-full w-fit mb-3">
+                <Sparkles className="h-3 w-3 animate-pulse" />
+                <span>AI Voice Coaching</span>
+              </div>
+              <h2 className="text-xl font-bold leading-tight mb-1 text-card-foreground">AI Posture Coach</h2>
+              <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 mb-4">
+                Track your squats, curls, and push-ups in real-time with automatic skeletal tracking and spoken audio form cues.
+              </p>
+            </div>
+            
+            {/* Floating Camera overlay icon graphic */}
+            <div className="absolute right-6 top-1/2 -translate-y-1/2 h-16 w-16 rounded-2xl bg-[#1C64F2]/10 border border-[#1C64F2]/20 flex items-center justify-center text-[#4A85F6]">
+              <Camera className="h-8 w-8 animate-bounce" />
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#4A85F6] mt-auto z-10 hover:underline">
+              <span>Start AI Training</span>
+              <span className="text-sm">→</span>
+            </div>
+          </div>
+        </div>
+
       </div>
-
-      {/* Reminders Modal */}
-      {showReminders && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60" onClick={() => setShowReminders(false)}>
-          <div onClick={e => e.stopPropagation()} className="w-full max-w-md rounded-t-3xl bg-card p-5 pb-8 animate-fade-in">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold">Reminders</h2>
-              <button onClick={() => setShowReminders(false)} className="p-1"><X className="h-5 w-5 text-muted-foreground" /></button>
-            </div>
-            <div className="mt-4 flex gap-2">
-              <input type="text" placeholder="Reminder label..." value={newLabel} onChange={e => setNewLabel(e.target.value)} className="flex-1 rounded-xl bg-secondary px-3 py-2.5 text-xs text-foreground placeholder:text-muted-foreground outline-none" />
-              <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)} className="w-24 rounded-xl bg-secondary px-2 py-2.5 text-xs text-foreground outline-none" />
-              <button onClick={addReminder} className="flex items-center justify-center rounded-xl bg-primary px-3 text-primary-foreground active:scale-95 transition-transform"><Plus className="h-4 w-4" /></button>
-            </div>
-            <div className="mt-4 space-y-2 max-h-60 overflow-y-auto">
-              {reminders.length === 0 && <p className="text-center text-xs text-muted-foreground py-6">No reminders set</p>}
-              {reminders.map(r => (
-                <div key={r.id} className="flex items-center gap-3 rounded-xl bg-secondary p-3">
-                  <button onClick={() => setReminders(prev => prev.map(x => x.id === r.id ? { ...x, enabled: !x.enabled } : x))} className={`h-5 w-5 shrink-0 rounded-full border-2 transition-colors ${r.enabled ? "border-primary bg-primary" : "border-muted-foreground"}`}>
-                    {r.enabled && <svg className="h-full w-full text-primary-foreground" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>}
-                  </button>
-                  <div className="flex-1">
-                    <p className="text-xs font-semibold">{r.label}</p>
-                    <p className="text-[10px] text-muted-foreground">{r.time}</p>
-                  </div>
-                  <button onClick={() => setReminders(prev => prev.filter(x => x.id !== r.id))} className="p-1"><Trash2 className="h-3.5 w-3.5 text-muted-foreground" /></button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Avatar Picker Modal */}
-      {showAvatarPicker && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60" onClick={() => setShowAvatarPicker(false)}>
-          <div onClick={e => e.stopPropagation()} className="w-full max-w-md rounded-t-3xl bg-card p-5 pb-8 animate-fade-in max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold">Choose Your Avatar</h2>
-              <button onClick={() => setShowAvatarPicker(false)} className="p-1"><X className="h-5 w-5 text-muted-foreground" /></button>
-            </div>
-            <p className="mt-1 text-[10px] text-muted-foreground">Pick your spirit animal 🔥</p>
-            {avatarCategories.map(cat => (
-              <div key={cat} className="mt-3">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">{cat}</p>
-                <div className="grid grid-cols-4 gap-2">
-                  {animalAvatars.filter(a => a.category === cat).map(avatar => (
-                    <button key={avatar.id} onClick={() => handleAvatarSelect(avatar.id)}
-                      className={`flex flex-col items-center gap-1 rounded-2xl p-2.5 transition-all duration-300 ${
-                        bouncingId === avatar.id ? "animate-bounce scale-110" : ""
-                      } ${selectedAvatar === avatar.id ? "ring-2 ring-primary bg-primary/10 scale-105" : "gym-gradient-card active:scale-90 hover:scale-105"}`}
-                    >
-                      <span className="text-xl">{avatar.emoji}</span>
-                      <span className="text-[7px] font-bold leading-tight text-center">{avatar.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </MobileLayout>
   );
 };

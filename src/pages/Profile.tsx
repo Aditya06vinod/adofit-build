@@ -1,11 +1,11 @@
-import { ChevronLeft, Settings, Award, TrendingUp, Calendar, Target, X, Flame, Zap, ChevronRight } from "lucide-react";
+import { ChevronLeft, Settings, Award, TrendingUp, Calendar, Target, X, Flame, Zap, ChevronRight, Sun, Moon } from "lucide-react";
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/MobileLayout";
 import ProgressRing from "@/components/ProgressRing";
 import { useToast } from "@/hooks/use-toast";
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from "recharts";
-
+import { useTheme } from "@/contexts/ThemeContext";
 import { animalAvatars, avatarCategories } from "@/data/avatars";
 
 // Only use real saved active days - no mock generation
@@ -85,6 +85,19 @@ const markTodayActive = () => {
 const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { currentTheme, setTheme } = useTheme();
+
+  const isDarkMode = currentTheme.id !== "ios-light" && currentTheme.id !== "white-clean";
+  const toggleTheme = () => {
+    if (isDarkMode) {
+      setTheme("ios-light");
+      toast({ title: "Theme switched to Light Mode" });
+    } else {
+      setTheme("ios-dark");
+      toast({ title: "Theme switched to Dark Mode" });
+    }
+  };
+
   const [selectedAvatar, setSelectedAvatar] = useState(() => localStorage.getItem("ado-avatar") || "wolf");
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [bouncingId, setBouncingId] = useState<string | null>(null);
@@ -181,6 +194,31 @@ const Profile = () => {
           </button>
           <h2 className="mt-3 text-lg font-bold">{userName}</h2>
           <p className="text-xs text-muted-foreground">{(() => { const g = localStorage.getItem("ado-user-goal"); const map: Record<string, string> = { lose: "Fat Burner", gain: "Muscle Builder", maintain: "Fitness Keeper", endurance: "Endurance Runner", flexibility: "Flexibility Pro", strength: "Strength Athlete" }; return map[g || ""] || "Fitness Enthusiast"; })()} · Level {Math.max(1, Math.floor(totalActiveDays / 7))}</p>
+        </div>
+
+        {/* Theme Toggle Preference */}
+        <div className="mt-5 gym-gradient-card rounded-2xl p-4 border border-border/30 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              {isDarkMode ? <Moon className="h-5 w-5 text-primary" /> : <Sun className="h-5 w-5 text-primary" />}
+            </div>
+            <div>
+              <p className="text-xs font-bold">App Theme</p>
+              <p className="text-[10px] text-muted-foreground">{isDarkMode ? "Dark Mode" : "Light Mode"} Active</p>
+            </div>
+          </div>
+          <button 
+            onClick={toggleTheme}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none ${
+              isDarkMode ? "bg-primary" : "bg-muted"
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                isDarkMode ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
         </div>
 
         {/* Streak Banner */}

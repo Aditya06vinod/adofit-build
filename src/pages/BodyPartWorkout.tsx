@@ -1,15 +1,29 @@
-import { ChevronLeft, Play, Clock, Flame, Dumbbell, CheckCircle2, Timer, Minus, Plus, Volume2, Square } from "lucide-react";
+import { ChevronLeft, Play, Clock, Flame, Dumbbell, CheckCircle2, Timer, Minus, Plus, Volume2, Square, Info, X, Check } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import MobileLayout from "@/components/MobileLayout";
 import ProgressRing from "@/components/ProgressRing";
+
+interface WorkoutSet {
+  id: string;
+  weight: string;
+  reps: string;
+  completed: boolean;
+}
 
 interface Exercise {
   name: string;
   sets: number;
   reps: string;
   completed: boolean;
+  setsData?: WorkoutSet[];
 }
+
+interface VideoInstruction {
+  youtubeId: string;
+  steps: string[];
+}
+
 
 const bodyPartData: Record<string, { title: string; emoji: string; exercises: Exercise[] }> = {
   chest: {
@@ -282,11 +296,250 @@ const playBeep = (frequency = 880, duration = 200, count = 3) => {
 
 const REST_PRESETS = [30, 45, 60, 90, 120];
 
+// Exercise to YouTube Video mapping database
+const exerciseInstructions: Record<string, VideoInstruction> = {
+  "bench press": {
+    youtubeId: "gRVjAtPip0Y",
+    steps: [
+      "Lie flat on a bench, grip the barbell slightly wider than shoulder-width.",
+      "Lower the bar slowly to your chest, keeping elbows at a 45-degree angle.",
+      "Push the bar back up powerfully by extending your arms."
+    ]
+  },
+  "dumbbell press": {
+    youtubeId: "8iPEnnM__kA",
+    steps: [
+      "Lie on the bench with dumbbells at chest level, palms facing forward.",
+      "Press the dumbbells straight up over your chest without locking your elbows.",
+      "Slowly lower them back down to the sides of your chest."
+    ]
+  },
+  "cable fly": {
+    youtubeId: "p5PR68G4tBc",
+    steps: [
+      "Stand between cable pulleys, hold handles with arms extended slightly bent.",
+      "Bring your hands together in a wide arc in front of your chest.",
+      "Slowly return to the starting position with control."
+    ]
+  },
+  "push up": {
+    youtubeId: "IODxDxX7oi4",
+    steps: [
+      "Place hands slightly wider than shoulder-width, feet close together.",
+      "Lower your chest to the floor keeping your back straight and core tight.",
+      "Push back up to the starting position."
+    ]
+  },
+  "pullover": {
+    youtubeId: "h1H4o4U4hH8",
+    steps: [
+      "Lie perpendicular on a bench, holding a dumbbell with both hands over chest.",
+      "Lower the weight backward in an arc behind your head.",
+      "Pull the weight back up to the starting position."
+    ]
+  },
+  "pec deck": {
+    youtubeId: "eGjt4lk6gJw",
+    steps: [
+      "Sit back against the pad, grip the handles, and place forearms on pads.",
+      "Squeeze your chest to bring the handles/pads together in the center.",
+      "Slowly return to the start, feeling a stretch in your chest."
+    ]
+  },
+  "press": {
+    youtubeId: "2yjwHeFToJ0",
+    steps: [
+      "Stand or sit holding the weight at shoulder level.",
+      "Press the weight straight up overhead until arms are extended.",
+      "Lower the weight back down with control."
+    ]
+  },
+  "deadlift": {
+    youtubeId: "op9kVnSso6Q",
+    steps: [
+      "Stand with feet hip-width apart, barbell over mid-foot.",
+      "Bend at hips and knees, grip the bar, keep back flat and chest up.",
+      "Drive through your heels to stand up, pulling the bar up to hip level."
+    ]
+  },
+  "pull up": {
+    youtubeId: "eGo4IYlbE5g",
+    steps: [
+      "Grip the pull-up bar with hands wider than shoulder-width, palms facing away.",
+      "Pull your chest up toward the bar, retracting your shoulder blades.",
+      "Lower yourself slowly back down to a dead hang."
+    ]
+  },
+  "row": {
+    youtubeId: "gQB25HD29bM",
+    steps: [
+      "Bend at the hips, keeping your back flat and knees slightly bent.",
+      "Pull the barbell or dumbbell up toward your lower ribcage.",
+      "Slowly lower the weight back down with control."
+    ]
+  },
+  "pulldown": {
+    youtubeId: "CAwf7n6Luuc",
+    steps: [
+      "Sit at the pulldown station, grip the bar wider than shoulder-width.",
+      "Pull the bar down to your upper chest while retracting shoulder blades.",
+      "Return the bar to the start position with control."
+    ]
+  },
+  "overhead press": {
+    youtubeId: "2yjwHeFToJ0",
+    steps: [
+      "Hold the barbell at your upper chest, feet shoulder-width apart.",
+      "Press the bar overhead, extending arms fully and squeezing glutes.",
+      "Lower the bar back to your upper chest."
+    ]
+  },
+  "lateral raise": {
+    youtubeId: "gwLzBJYoWlI",
+    steps: [
+      "Stand holding dumbbells at your sides, chest out.",
+      "Raise your arms out to the sides until they are parallel to the floor.",
+      "Slowly lower the dumbbells back to your sides."
+    ]
+  },
+  "face pull": {
+    youtubeId: "rep-qV5ibjI",
+    steps: [
+      "Hold rope handles from a high cable pulley, palms facing inward.",
+      "Pull the rope toward your face, separating the ends toward your ears.",
+      "Slowly return to the starting position."
+    ]
+  },
+  "rear delt": {
+    youtubeId: "z160v1H1o6o",
+    steps: [
+      "Bend forward at the hips, keeping your back flat.",
+      "Raise dumbbells out to the sides, focusing on the back of your shoulders.",
+      "Lower the weights back down with control."
+    ]
+  },
+  "curl": {
+    youtubeId: "ykJgr1RFoKo",
+    steps: [
+      "Stand holding weights, elbows tucked close to your torso.",
+      "Squeeze biceps to curl the weights up while keeping upper arms still.",
+      "Slowly lower the weights back to the starting position."
+    ]
+  },
+  "skull crusher": {
+    youtubeId: "d_KZxPfBYps",
+    steps: [
+      "Lie on a bench, hold barbell/dumbbell overhead with arms straight.",
+      "Bend at the elbows to lower the weight to your forehead/behind head.",
+      "Extend your arms back to the starting position."
+    ]
+  },
+  "pushdown": {
+    youtubeId: "2-LAMgAqyWY",
+    steps: [
+      "Hold the cable bar/rope at chest level, elbows tucked.",
+      "Push the bar/rope down by extending your arms, squeezing triceps at the bottom.",
+      "Slowly bring the cable back to chest level."
+    ]
+  },
+  "dip": {
+    youtubeId: "2z8JmcrW-As",
+    steps: [
+      "Support your body on dip bars, arms straight, knees bent.",
+      "Lower your body by bending elbows to 90 degrees.",
+      "Push back up to the starting position."
+    ]
+  },
+  "squat": {
+    youtubeId: "gcNh17Ckjgg",
+    steps: [
+      "Place barbell on upper back/traps, feet shoulder-width apart.",
+      "Bend knees and hips, lowering your body as if sitting in a chair.",
+      "Go down until thighs are parallel to the floor, then stand back up."
+    ]
+  },
+  "leg press": {
+    youtubeId: "IZxyjWwJYlU",
+    steps: [
+      "Sit on the machine, feet shoulder-width apart on the sled.",
+      "Lower the sled toward your chest by bending knees to 90 degrees.",
+      "Press the sled back up without locking your knees."
+    ]
+  },
+  "lunge": {
+    youtubeId: "QOVaHWMqZyU",
+    steps: [
+      "Stand tall, step forward with one leg.",
+      "Lower your hips until your back knee is just above the floor.",
+      "Push off your front foot to return to the starting position."
+    ]
+  },
+  "hip thrust": {
+    youtubeId: "LM8XHLYJoYs",
+    steps: [
+      "Sit on the floor, upper back against a bench, barbell over hips.",
+      "Drive through your heels to lift your hips up to bench level.",
+      "Squeeze glutes at the top, then lower your hips back down."
+    ]
+  },
+  "glute bridge": {
+    youtubeId: "wPM8co452Cw",
+    steps: [
+      "Lie on your back, knees bent, feet flat on the floor.",
+      "Lift your hips off the floor, squeezing your glutes.",
+      "Lower your hips back to the starting position."
+    ]
+  },
+  "plank": {
+    youtubeId: "pSHjTRCQxIw",
+    steps: [
+      "Place forearms on floor, elbows aligned under shoulders.",
+      "Keep body in a straight line from head to heels, core engaged.",
+      "Hold the position without letting hips sag."
+    ]
+  },
+  "twist": {
+    youtubeId: "wkD8rjkodUI",
+    steps: [
+      "Sit on the floor, knees bent, leaning back slightly.",
+      "Hold hands or a weight, rotate your torso from side to side.",
+      "Keep your core engaged throughout the movement."
+    ]
+  },
+  "raise": {
+    youtubeId: "hdZkxA1EDwg",
+    steps: [
+      "Lie on your back or hang from a bar, legs straight.",
+      "Raise your legs up to 90 degrees (or hip height if hanging).",
+      "Lower them slowly back to the starting position."
+    ]
+  }
+};
+
+const getExerciseInstruction = (name: string): VideoInstruction => {
+  const cleanName = name.toLowerCase();
+  for (const [key, value] of Object.entries(exerciseInstructions)) {
+    if (cleanName.includes(key)) {
+      return value;
+    }
+  }
+  return {
+    youtubeId: "gcNh17Ckjgg", // default fallback
+    steps: [
+      "Focus on performing the exercise with strict, controlled posture.",
+      "Inhale on the eccentric phase (lowering) and exhale on the concentric phase (lifting).",
+      "Ensure a full range of motion without locking out joints at the extreme point."
+    ]
+  };
+};
+
 const BodyPartWorkout = () => {
   const navigate = useNavigate();
   const { part } = useParams<{ part: string }>();
   const data = bodyPartData[part || "chest"];
-  const [exercises, setExercises] = useState<Exercise[]>(data?.exercises || []);
+  
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [instructionExercise, setInstructionExercise] = useState<string | null>(null);
   const [isActive, setIsActive] = useState(false);
   const [timer, setTimer] = useState(0);
   const [interval, setIntervalId] = useState<ReturnType<typeof setInterval> | null>(null);
@@ -301,6 +554,27 @@ const BodyPartWorkout = () => {
     };
   }, []);
 
+  // Initialize exercises with detailed sets/reps
+  useEffect(() => {
+    if (data?.exercises) {
+      setExercises(
+        data.exercises.map((ex, idx) => {
+          const repsVal = ex.reps.includes("-") ? ex.reps.split("-")[1] : ex.reps.replace(/\D/g, "") || "10";
+          const defaultWeight = ex.name.toLowerCase().includes("squat") || ex.name.toLowerCase().includes("press") || ex.name.toLowerCase().includes("deadlift") ? "40" : "10";
+          return {
+            ...ex,
+            setsData: Array.from({ length: ex.sets }).map((_, sIdx) => ({
+              id: `set-${idx}-${sIdx}-${Math.random()}`,
+              weight: defaultWeight,
+              reps: repsVal,
+              completed: false,
+            })),
+          };
+        })
+      );
+    }
+  }, [part, data]);
+
   if (!data) {
     return (
       <MobileLayout>
@@ -312,10 +586,61 @@ const BodyPartWorkout = () => {
   }
 
   const completedCount = exercises.filter((e) => e.completed).length;
-  const progress = (completedCount / exercises.length) * 100;
+  const progress = exercises.length > 0 ? (completedCount / exercises.length) * 100 : 0;
 
   const toggleExercise = (index: number) => {
-    setExercises((prev) => prev.map((e, i) => (i === index ? { ...e, completed: !e.completed } : e)));
+    setExercises((prev) =>
+      prev.map((e, i) => {
+        if (i === index) {
+          const nextCompleted = !e.completed;
+          const updatedSets = (e.setsData || []).map(s => ({
+            ...s,
+            completed: nextCompleted
+          }));
+          return {
+            ...e,
+            completed: nextCompleted,
+            setsData: updatedSets
+          };
+        }
+        return e;
+      })
+    );
+  };
+
+  const toggleSetComplete = (exerciseIdx: number, setId: string) => {
+    setExercises((prev) =>
+      prev.map((ex, idx) => {
+        if (idx === exerciseIdx) {
+          const updatedSets = (ex.setsData || []).map((s) =>
+            s.id === setId ? { ...s, completed: !s.completed } : s
+          );
+          const allCompleted = updatedSets.every((s) => s.completed);
+          return {
+            ...ex,
+            setsData: updatedSets,
+            completed: allCompleted,
+          };
+        }
+        return ex;
+      })
+    );
+  };
+
+  const updateSetField = (exerciseIdx: number, setId: string, field: "weight" | "reps", value: string) => {
+    setExercises((prev) =>
+      prev.map((ex, idx) => {
+        if (idx === exerciseIdx) {
+          return {
+            ...ex,
+            setsData: (ex.setsData || []).map((s) =>
+              s.id === setId ? { ...s, [field]: value } : s
+            ),
+          };
+        }
+        return ex;
+      })
+    );
   };
 
   const startWorkout = () => {
@@ -366,9 +691,11 @@ const BodyPartWorkout = () => {
 
   const restProgress = restDuration > 0 ? ((restDuration - restRemaining) / restDuration) * 100 : 0;
 
+  const activeInstruction = instructionExercise ? getExerciseInstruction(instructionExercise) : null;
+
   return (
     <MobileLayout>
-      <div className="animate-fade-in px-4 pt-4">
+      <div className="animate-fade-in px-4 pt-4 pb-28">
         <div className="flex items-center justify-between">
           <button onClick={() => navigate(-1)} className="p-1"><ChevronLeft className="h-5 w-5" /></button>
           <h1 className="text-base font-bold">{data.emoji} {data.title} Workout</h1>
@@ -469,31 +796,181 @@ const BodyPartWorkout = () => {
           {isActive ? "End Workout" : "Start Workout"}
         </button>
 
-        <div className="mt-4 space-y-2 pb-4">
+        {/* Exercises Cards with Sets subsections */}
+        <div className="mt-4 space-y-4 pb-4">
           {exercises.map((exercise, index) => (
-            <button
+            <div 
               key={index}
-              onClick={() => toggleExercise(index)}
-              className={`flex w-full items-center gap-3 rounded-xl p-3 transition-all active:scale-[0.98] ${
-                exercise.completed ? "bg-primary/10 border border-primary/30" : "bg-secondary"
+              className={`bg-card border border-border/30 rounded-2xl p-4 shadow-sm transition-all ${
+                exercise.completed ? "border-primary/40 bg-primary/5" : ""
               }`}
             >
-              {exercise.completed ? (
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" />
-              ) : (
-                <div className="h-5 w-5 shrink-0 rounded-full border-2 border-muted-foreground" />
-              )}
-              <div className="flex-1 text-left">
-                <p className={`text-xs font-semibold ${exercise.completed ? "text-primary" : ""}`}>{exercise.name}</p>
-                <p className="text-[10px] text-muted-foreground">{exercise.sets} sets × {exercise.reps}</p>
+              {/* Exercise Header */}
+              <div className="flex items-center justify-between mb-3">
+                <button 
+                  onClick={() => setInstructionExercise(exercise.name)}
+                  className="flex items-center gap-3 text-left group hover:opacity-85 transition-opacity"
+                  title="Tap to see instructions"
+                >
+                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:scale-105 transition-transform shrink-0">
+                    <Dumbbell className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-[#1C64F2] flex items-center gap-1.5 flex-wrap">
+                      {exercise.name}
+                      <span className="text-[9px] font-medium bg-primary/10 text-primary px-1.5 py-0.5 rounded flex items-center gap-0.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <Info className="h-2.5 w-2.5" /> Video
+                      </span>
+                    </h3>
+                  </div>
+                </button>
+                <button
+                  onClick={() => toggleExercise(index)}
+                  className={`h-7 w-7 rounded-full border flex items-center justify-center transition-all ${
+                    exercise.completed 
+                      ? "bg-primary border-primary text-white" 
+                      : "bg-secondary border-border hover:border-muted-foreground text-transparent"
+                  }`}
+                  title="Mark exercise complete"
+                >
+                  <Check className="h-4 w-4 stroke-[3]" />
+                </button>
               </div>
-              <Dumbbell className="h-4 w-4 text-muted-foreground" />
-            </button>
+
+              {/* Sets Table Subsection */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-border/30 text-[9px] font-bold uppercase text-muted-foreground">
+                      <th className="py-1 w-10 text-center">Set</th>
+                      <th className="py-1 text-center w-20">kg</th>
+                      <th className="py-1 text-center w-20">Reps</th>
+                      <th className="py-1 text-center w-10">✓</th>
+                    </tr>
+                  </thead>
+                  <tbody className="space-y-1">
+                    {(exercise.setsData || []).map((set, sIdx) => (
+                      <tr 
+                        key={set.id}
+                        className={`transition-colors border-b border-border/10 last:border-0 ${
+                          set.completed 
+                            ? "bg-[#2D452B]/25 text-[#58D66D]" 
+                            : "hover:bg-secondary/20"
+                        }`}
+                      >
+                        {/* Set index */}
+                        <td className="py-2 text-xs font-bold text-center text-muted-foreground">
+                          {sIdx + 1}
+                        </td>
+
+                        {/* Weight input */}
+                        <td className="py-2 text-center">
+                          <input 
+                            type="number" 
+                            value={set.weight} 
+                            disabled={set.completed || !isActive}
+                            onChange={(e) => updateSetField(index, set.id, "weight", e.target.value)}
+                            className="w-16 bg-secondary border border-border/30 rounded py-1 text-center text-xs font-bold outline-none text-foreground disabled:opacity-70"
+                          />
+                        </td>
+
+                        {/* Reps input */}
+                        <td className="py-2 text-center">
+                          <input 
+                            type="number" 
+                            value={set.reps} 
+                            disabled={set.completed || !isActive}
+                            onChange={(e) => updateSetField(index, set.id, "reps", e.target.value)}
+                            className="w-16 bg-secondary border border-border/30 rounded py-1 text-center text-xs font-bold outline-none text-foreground disabled:opacity-70"
+                          />
+                        </td>
+
+                        {/* Checkbox */}
+                        <td className="py-2 text-center">
+                          <button
+                            disabled={!isActive}
+                            onClick={() => toggleSetComplete(index, set.id)}
+                            className={`h-6 w-6 rounded flex items-center justify-center border transition-all mx-auto ${
+                              set.completed 
+                                ? "bg-[#58D66D] border-[#58D66D] text-white" 
+                                : "bg-secondary border-border hover:border-muted-foreground text-transparent disabled:opacity-40"
+                            }`}
+                          >
+                            <Check className="h-4.5 w-4.5 stroke-[3]" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           ))}
         </div>
       </div>
+
+      {/* Video Instruction Modal Overlay */}
+      {instructionExercise && activeInstruction && (
+        <div 
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4 animate-fade-in"
+          onClick={() => setInstructionExercise(null)}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-2xl bg-card border border-border p-5 text-left animate-scale-in relative"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-card-foreground flex items-center gap-2">
+                <Play className="h-4 w-4 text-primary fill-current" /> {instructionExercise}
+              </h3>
+              <button 
+                onClick={() => setInstructionExercise(null)}
+                className="p-1 hover:bg-secondary/40 rounded-full transition-colors text-muted-foreground"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* YouTube Iframe Player (Pull from Youtube as requested) */}
+            <div className="w-full aspect-video rounded-xl bg-black overflow-hidden border border-border/40 shadow-inner relative mb-4">
+              <iframe
+                className="w-full h-full"
+                src={`https://www.youtube.com/embed/${activeInstruction.youtubeId}?autoplay=1&mute=1&loop=1&playlist=${activeInstruction.youtubeId}`}
+                title={`${instructionExercise} instruction video`}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+
+            {/* Steps Instruction list */}
+            <div>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Instructions</p>
+              <ul className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                {activeInstruction.steps.map((step, sIdx) => (
+                  <li key={sIdx} className="flex gap-2 items-start text-[10px] text-muted-foreground leading-normal">
+                    <span className="h-4 w-4 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[9px] font-bold mt-0.5">
+                      {sIdx + 1}
+                    </span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <button 
+              onClick={() => setInstructionExercise(null)}
+              className="mt-5 w-full rounded-xl bg-secondary py-2.5 text-xs font-bold text-foreground hover:bg-secondary/80 active:scale-95 transition-transform"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     </MobileLayout>
   );
 };
 
 export default BodyPartWorkout;
+
