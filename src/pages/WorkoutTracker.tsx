@@ -1,5 +1,5 @@
-import { ChevronLeft, Plus, Check, MoreVertical, PlusCircle, Trash2, Timer, X, Play, Info, Dumbbell, Search } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { ChevronLeft, Plus, Check, MoreVertical, PlusCircle, Trash2, Timer, X, Play, Info, Dumbbell, Search, Camera } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import MobileLayout from "@/components/MobileLayout";
 import { useToast } from "@/hooks/use-toast";
@@ -407,6 +407,12 @@ const defaultExercisesData = [
   { name: "Plank Hold", sets: 3, reps: 60 },
 ];
 
+const triggerHaptic = (intensity: number = 15) => {
+  if (window.navigator && window.navigator.vibrate) {
+    window.navigator.vibrate(intensity);
+  }
+};
+
 const WorkoutTracker = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -415,7 +421,6 @@ const WorkoutTracker = () => {
   const state = location.state as { routineName?: string; exercises?: { name: string; sets?: number; reps?: number }[] } | null;
   const routineName = state?.routineName || "Workout Session";
 
-  // Map state exercises to detailed sets structure
   const [exercises, setExercises] = useState<ActiveExercise[]>(() => {
     const rawExs = state?.exercises || defaultExercisesData;
     return rawExs.map((ex, idx) => {
@@ -485,6 +490,7 @@ const WorkoutTracker = () => {
   }, 0);
 
   const toggleSetComplete = (exId: string, setId: string) => {
+    triggerHaptic(10);
     setExercises(prev =>
       prev.map(ex => {
         if (ex.id === exId) {
@@ -504,6 +510,7 @@ const WorkoutTracker = () => {
   };
 
   const addSetToExercise = (exId: string) => {
+    triggerHaptic(10);
     setExercises(prev =>
       prev.map(ex => {
         if (ex.id === exId) {
@@ -550,6 +557,7 @@ const WorkoutTracker = () => {
   };
 
   const deleteSetRow = (exId: string, setId: string) => {
+    triggerHaptic(20);
     setExercises(prev =>
       prev.map(ex => {
         if (ex.id === exId) {
@@ -564,6 +572,7 @@ const WorkoutTracker = () => {
   };
 
   const addExercise = () => {
+    triggerHaptic(10);
     setSearchQuery("");
     setSelectedEquipment("all");
     setSelectedMuscle("all");
@@ -571,6 +580,7 @@ const WorkoutTracker = () => {
   };
 
   const handleSelectDbExercise = (dbExName: string) => {
+    triggerHaptic(25);
     const defaultWeight = dbExName.toLowerCase().includes("squat") || dbExName.toLowerCase().includes("press") || dbExName.toLowerCase().includes("deadlift") ? "40" : "15";
     setExercises(prev => [
       ...prev,
@@ -611,6 +621,7 @@ const WorkoutTracker = () => {
   };
 
   const stopWorkout = () => {
+    triggerHaptic(40);
     setIsWorkoutActive(false);
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
 
@@ -659,21 +670,41 @@ const WorkoutTracker = () => {
     return `${mins}min`;
   };
 
-  const filteredDbExercises = dbExercises.filter(ex => {
-    const matchesSearch = ex.name.toLowerCase().includes(searchQuery.toLowerCase()) || ex.muscle.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesEquipment = selectedEquipment === "all" || ex.equipment.toLowerCase() === selectedEquipment.toLowerCase();
-    const matchesMuscle = selectedMuscle === "all" || ex.muscle.toLowerCase() === selectedMuscle.toLowerCase();
-    return matchesSearch && matchesEquipment && matchesMuscle;
-  });
-
-  const groupedExercises: Record<string, DatabaseExercise[]> = {};
-  filteredDbExercises.sort((a, b) => a.name.localeCompare(b.name)).forEach(ex => {
-    const firstLetter = ex.name.charAt(0).toUpperCase();
-    if (!groupedExercises[firstLetter]) {
-      groupedExercises[firstLetter] = [];
+  const startNativePostureCoach = (exerciseName: string) => {
+    if ((window as any).AndroidInterface) {
+      const apiKey = localStorage.getItem("ado-gemini-api-key") || "";
+      (window as any).AndroidInterface.startPostureCoach(apiKey, exerciseName);
+    } else {
+      toast({
+        title: "Posture Coach",
+        description: "AI Posture Coach is only available in the Android app.",
+      });
     }
-    groupedExercises[firstLetter].push(ex);
-  });
+  };
+
+  const filteredDbExercises = useMemo(() => {
+    return dbExercises.filter(ex => {
+      const matchesSearch = ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           ex.muscle.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesEquipment = selectedEquipment === "all" ||
+                              ex.equipment.toLowerCase() === selectedEquipment.toLowerCase();
+      const matchesMuscle = selectedMuscle === "all" ||
+                           ex.muscle.toLowerCase() === selectedMuscle.toLowerCase();
+      return matchesSearch && matchesEquipment && matchesMuscle;
+    }).sort((a, b) => a.name.localeCompare(b.name));
+  }, [searchQuery, selectedEquipment, selectedMuscle]);
+
+  const groupedExercises = useMemo(() => {
+    const groups: Record<string, DatabaseExercise[]> = {};
+    filteredDbExercises.forEach(ex => {
+      const firstLetter = ex.name.charAt(0).toUpperCase();
+      if (!groups[firstLetter]) {
+        groups[firstLetter] = [];
+      }
+      groups[firstLetter].push(ex);
+    });
+    return groups;
+  }, [filteredDbExercises]);
 
   const activeInstruction = instructionExercise ? getExerciseInstruction(instructionExercise) : null;
 
@@ -740,9 +771,18 @@ const WorkoutTracker = () => {
                     </h3>
                   </div>
                 </button>
-                <button className="p-1 hover:bg-secondary/40 rounded-full text-muted-foreground">
-                  <MoreVertical className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => startNativePostureCoach(exercise.name)}
+                    className="p-1.5 hover:bg-emerald-500/10 rounded-full text-emerald-500 transition-colors"
+                    title="Start AI Posture Coach"
+                  >
+                    <Camera className="h-4 w-4" />
+                  </button>
+                  <button className="p-1 hover:bg-secondary/40 rounded-full text-muted-foreground">
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
 
               {/* Notes Field */}
@@ -920,8 +960,12 @@ const WorkoutTracker = () => {
 
       {/* iOS-style Add Exercise bottom sheet modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="w-full h-[90vh] rounded-t-[28px] bg-card border-t border-border/30 flex flex-col overflow-hidden animate-slide-up shadow-2xl">
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowAddModal(false)}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full rounded-t-[28px] bg-card border-t border-border/30 flex flex-col overflow-hidden animate-slide-up shadow-2xl"
+            style={{ height: '90vh', maxHeight: '90vh' }}
+          >
             
             {/* Modal Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border/20 shrink-0">

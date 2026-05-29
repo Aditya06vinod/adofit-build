@@ -19,15 +19,21 @@ const calculateStreak = (activeDays: string[]): number => {
   if (activeDays.length === 0) return 0;
   const sorted = [...activeDays].sort((a, b) => b.localeCompare(a));
   let streak = 0;
-  const d = new Date();
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  let currentCheck = new Date();
+  if (!sorted.includes(todayStr)) {
+    currentCheck.setDate(currentCheck.getDate() - 1);
+  }
+
   for (let i = 0; i < 365; i++) {
-    const dateStr = d.toISOString().split("T")[0];
+    const dateStr = currentCheck.toISOString().split("T")[0];
     if (sorted.includes(dateStr)) {
       streak++;
-    } else if (i > 0) {
+    } else {
       break;
     }
-    d.setDate(d.getDate() - 1);
+    currentCheck.setDate(currentCheck.getDate() - 1);
   }
   return streak;
 };
@@ -106,8 +112,11 @@ const Profile = () => {
     return { year: now.getFullYear(), month: now.getMonth() };
   });
 
-  // Mark today and get active days
-  const activeDays = useMemo(() => markTodayActive(), []);
+  const [activeDays, setActiveDays] = useState<string[]>(() => {
+    const saved = localStorage.getItem("ado-active-days");
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const hasData = activeDays.length > 0;
   const streak = useMemo(() => calculateStreak(activeDays), [activeDays]);
   const weeklyData = useMemo(() => getWeeklyActivity(activeDays), [activeDays]);
@@ -479,7 +488,7 @@ const Profile = () => {
       {/* Avatar Picker */}
       {showAvatarPicker && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60" onClick={() => setShowAvatarPicker(false)}>
-          <div onClick={e => e.stopPropagation()} className="w-full max-w-md rounded-t-3xl bg-card p-5 pb-8 animate-fade-in max-h-[80vh] overflow-y-auto">
+          <div onClick={e => e.stopPropagation()} className="w-full w-full rounded-t-3xl bg-card p-5 pb-8 animate-fade-in max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold">Choose Your Avatar</h2>
               <button onClick={() => setShowAvatarPicker(false)} className="p-1"><X className="h-5 w-5 text-muted-foreground" /></button>

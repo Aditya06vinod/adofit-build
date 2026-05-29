@@ -1,6 +1,6 @@
 import { Bell, Flame, Clock, UtensilsCrossed, Dumbbell, Check, Sparkles, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import MobileLayout from "@/components/MobileLayout";
 import { animalAvatars } from "@/data/avatars";
 
@@ -13,7 +13,6 @@ interface TodayWorkout {
 
 const workoutSchedule: TodayWorkout[] = [
   {
-    // 0: Sunday
     title: "Rest & Stretch",
     subtitle: "20 mins • Easy • 5 Exercises",
     image: "/cardio_workout.png",
@@ -26,7 +25,6 @@ const workoutSchedule: TodayWorkout[] = [
     ]
   },
   {
-    // 1: Monday
     title: "Chest & Triceps",
     subtitle: "40 mins • Intermediate • 4 Exercises",
     image: "/chest_workout.png",
@@ -38,7 +36,6 @@ const workoutSchedule: TodayWorkout[] = [
     ]
   },
   {
-    // 2: Tuesday
     title: "Back & Biceps",
     subtitle: "45 mins • Intermediate • 4 Exercises",
     image: "/back_workout.png",
@@ -50,7 +47,6 @@ const workoutSchedule: TodayWorkout[] = [
     ]
   },
   {
-    // 3: Wednesday
     title: "Cardio HIIT",
     subtitle: "25 mins • Hard • 5 Exercises",
     image: "/cardio_workout.png",
@@ -63,7 +59,6 @@ const workoutSchedule: TodayWorkout[] = [
     ]
   },
   {
-    // 4: Thursday
     title: "Leg Day Crusher",
     subtitle: "45 mins • Intermediate • 5 Exercises",
     image: "/leg_workout.png",
@@ -76,7 +71,6 @@ const workoutSchedule: TodayWorkout[] = [
     ]
   },
   {
-    // 5: Friday
     title: "Shoulder Shred",
     subtitle: "35 mins • Hard • 5 Exercises",
     image: "/chest_workout.png",
@@ -89,7 +83,6 @@ const workoutSchedule: TodayWorkout[] = [
     ]
   },
   {
-    // 6: Saturday
     title: "Core Destroyer",
     subtitle: "20 mins • Medium • 5 Exercises",
     image: "/cardio_workout.png",
@@ -103,6 +96,50 @@ const workoutSchedule: TodayWorkout[] = [
   }
 ];
 
+const calculateStreak = (activeDays: string[]): number => {
+  if (activeDays.length === 0) return 0;
+  const sorted = [...activeDays].sort((a, b) => b.localeCompare(a));
+  let streak = 0;
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  let currentCheck = new Date();
+  if (!sorted.includes(todayStr)) {
+    currentCheck.setDate(currentCheck.getDate() - 1);
+  }
+
+  for (let i = 0; i < 365; i++) {
+    const dateStr = currentCheck.toISOString().split("T")[0];
+    if (sorted.includes(dateStr)) {
+      streak++;
+    } else {
+      break;
+    }
+    currentCheck.setDate(currentCheck.getDate() - 1);
+  }
+  return streak;
+};
+
+const getThisWeekDateStrings = () => {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = now.getDate() - (day === 0 ? 6 : day - 1);
+  const monday = new Date(now.setDate(diff));
+
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    dates.push(d.toISOString().split("T")[0]);
+  }
+  return dates;
+};
+
+const triggerHaptic = (intensity: number = 15) => {
+  if (window.navigator && window.navigator.vibrate) {
+    window.navigator.vibrate(intensity);
+  }
+};
+
 const Index = () => {
   const navigate = useNavigate();
   const [selectedAvatar] = useState(() => localStorage.getItem("ado-avatar") || "wolf");
@@ -111,35 +148,44 @@ const Index = () => {
 
   const today = new Date();
   const dateString = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
-  const dayOfWeekIndex = today.getDay(); // 0 is Sunday, 1 is Monday ... 6 is Saturday
+  const dayOfWeekIndex = today.getDay();
   
   const daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const weekDates = useMemo(() => getThisWeekDateStrings(), []);
 
-  // Interactive Streak Days state
-  const [checkedDays, setCheckedDays] = useState<boolean[]>(() => {
-    const saved = localStorage.getItem("ado-home-streak-days");
-    return saved ? JSON.parse(saved) : [true, true, false, true, false, false, false];
+  const [activeDays, setActiveDays] = useState<string[]>(() => {
+    const saved = localStorage.getItem("ado-active-days");
+    return saved ? JSON.parse(saved) : [];
   });
 
+  const streak = useMemo(() => calculateStreak(activeDays), [activeDays]);
+
   const toggleDay = (index: number) => {
-    const next = [...checkedDays];
-    next[index] = !next[index];
-    setCheckedDays(next);
-    localStorage.setItem("ado-home-streak-days", JSON.stringify(next));
+    triggerHaptic();
+
+    const dateStr = weekDates[index];
+    const isFuture = dateStr > new Date().toISOString().split("T")[0];
+    if (isFuture) return;
+
+    setActiveDays(prev => {
+      const next = prev.includes(dateStr)
+        ? prev.filter(d => d !== dateStr)
+        : [...prev, dateStr];
+      localStorage.setItem("ado-active-days", JSON.stringify(next));
+      return next;
+    });
   };
 
-  // Redesigned dynamic progress ring parameters
   const progressPercent = 0.75;
   const angle = (progressPercent * 360 - 90) * (Math.PI / 180);
   const dotX = 50 + 40 * Math.cos(angle);
   const dotY = 50 + 40 * Math.sin(angle);
 
-  // Dynamic workout schedule based on current day
   const todayWorkout = workoutSchedule[dayOfWeekIndex];
 
   return (
     <MobileLayout>
-      <div className="min-h-screen bg-background text-foreground px-5 pt-12 pb-28 font-sans">
+      <div className="min-h-screen bg-background text-foreground px-5 pt-12 pb-28 font-sans animate-fade-in">
         
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -152,23 +198,25 @@ const Index = () => {
               <h1 className="text-lg font-bold">Hello, {userName}</h1>
             </div>
           </div>
-          <button className="h-10 w-10 rounded-full bg-card flex items-center justify-center border border-border/40">
+          <button
+            onClick={() => triggerHaptic(10)}
+            className="h-10 w-10 rounded-full bg-card flex items-center justify-center border border-border/40 active:scale-95 transition-transform"
+          >
             <Bell className="h-5 w-5 text-muted-foreground" />
           </button>
         </div>
 
-        {/* Daily Goal Card (Redesigned progress bar/ring) */}
+        {/* Daily Goal Card */}
         <div className="bg-card rounded-[24px] p-6 mb-4 flex items-center justify-between shadow-sm border border-border/30">
           <div>
             <p className="text-[10px] text-muted-foreground font-bold tracking-wider mb-1">DAILY GOAL</p>
             <h2 className="text-[42px] font-extrabold leading-none mb-3">{Math.round(progressPercent * 100)}%</h2>
             <div className="bg-[#2D452B] text-[#58D66D] text-[10px] font-bold px-3 py-1.5 rounded-full inline-flex items-center gap-1.5">
               <Flame className="h-3 w-3" fill="currentColor" />
-              15 Day Streak
+              {streak} Day Streak
             </div>
           </div>
-          
-          {/* Redesigned Progress Circle with Gradient & Pulsing Glowing Tip */}
+
           <div className="relative h-[110px] w-[110px] filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.15)]">
             <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
               <defs>
@@ -189,8 +237,7 @@ const Index = () => {
                 strokeDashoffset={251.2 * (1 - progressPercent)} 
                 strokeLinecap="round" 
               />
-              {/* Glowing endpoint dot */}
-              <circle 
+              <circle
                 cx={dotX} 
                 cy={dotY} 
                 r="5.5" 
@@ -207,10 +254,10 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Calories & Active Time (Redirect to food log page on tap) */}
+        {/* Calories & Active Time */}
         <div className="space-y-3 mb-8">
           <div 
-            onClick={() => navigate('/diet')}
+            onClick={() => { triggerHaptic(10); navigate('/diet'); }}
             className="bg-card rounded-[20px] p-5 border border-border/30 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all"
             title="Tap to log food"
           >
@@ -227,7 +274,7 @@ const Index = () => {
           </div>
 
           <div 
-            onClick={() => navigate('/diet')}
+            onClick={() => { triggerHaptic(10); navigate('/diet'); }}
             className="bg-card rounded-[20px] p-5 border border-border/30 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all"
             title="Tap to log food"
           >
@@ -244,12 +291,12 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Today's Nutrition (Redirect to food log page on tap) */}
+        {/* Today's Nutrition */}
         <div className="mb-8">
           <h2 className="text-[17px] font-bold mb-4">Today's Nutrition</h2>
           <div className="grid grid-cols-2 gap-3">
             <div 
-              onClick={() => navigate('/diet')}
+              onClick={() => { triggerHaptic(10); navigate('/diet'); }}
               className="bg-card rounded-[20px] p-5 pb-6 border border-border/30 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all"
               title="Tap to log food"
             >
@@ -260,7 +307,7 @@ const Index = () => {
               <p className="text-[11px] text-muted-foreground">Calories (kcal)</p>
             </div>
             <div 
-              onClick={() => navigate('/diet')}
+              onClick={() => { triggerHaptic(10); navigate('/diet'); }}
               className="bg-card rounded-[20px] p-5 pb-6 border border-border/30 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all"
               title="Tap to log food"
             >
@@ -273,35 +320,39 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Last 7 Days Streak (Interactive clickable toggles) */}
+        {/* Last 7 Days Streak */}
         <div className="mb-8 bg-card rounded-[24px] p-5 border border-border/30 shadow-sm">
           <h2 className="text-[17px] font-bold mb-4">Last 7 Days Streak</h2>
           <div className="flex justify-between items-center px-1">
-            {daysOfWeek.map((day, i) => (
-              <button 
-                key={i} 
-                onClick={() => toggleDay(i)}
-                className="flex flex-col items-center gap-2 group outline-none"
-                title={`Toggle ${day}`}
-              >
-                <span className="text-xs text-muted-foreground font-semibold group-hover:text-foreground transition-colors">{day}</span>
-                <div className={`h-11 w-11 rounded-full flex items-center justify-center border transition-all duration-300 ${
-                  checkedDays[i] 
-                    ? 'bg-[#1C64F2] border-[#1C64F2] text-white scale-105 shadow-md shadow-blue-500/20 active:scale-95' 
-                    : 'bg-secondary/40 border-border hover:border-muted-foreground/45 active:scale-90'
-                }`}>
-                  {checkedDays[i] ? (
-                    <Check className="h-6 w-6 text-white" strokeWidth={3.5} />
-                  ) : (
-                    <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30 group-hover:bg-muted-foreground/60 transition-colors" />
-                  )}
-                </div>
-              </button>
-            ))}
+            {daysOfWeek.map((day, i) => {
+              const dateStr = weekDates[i];
+              const isChecked = activeDays.includes(dateStr);
+              return (
+                <button
+                  key={i}
+                  onClick={() => toggleDay(i)}
+                  className="flex flex-col items-center gap-2 group outline-none"
+                  title={`Toggle ${day}`}
+                >
+                  <span className="text-xs text-muted-foreground font-semibold group-hover:text-foreground transition-colors">{day}</span>
+                  <div className={`h-11 w-11 rounded-full flex items-center justify-center border transition-all duration-300 ${
+                    isChecked
+                      ? 'bg-[#1C64F2] border-[#1C64F2] text-white scale-105 shadow-md shadow-blue-500/20 active:scale-95'
+                      : 'bg-secondary/40 border-border hover:border-muted-foreground/45 active:scale-90'
+                  }`}>
+                    {isChecked ? (
+                      <Check className="h-6 w-6 text-white" strokeWidth={3.5} />
+                    ) : (
+                      <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30 group-hover:bg-muted-foreground/60 transition-colors" />
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Today's Session (Changes dynamically based on day) */}
+        {/* Today's Session */}
         <div className="mb-4">
           <div className="bg-card rounded-[24px] p-6 relative overflow-hidden flex flex-col min-h-[220px] border border-border/30 shadow-sm">
             <div className="z-10 w-3/5">
@@ -310,18 +361,17 @@ const Index = () => {
               <p className="text-[12px] text-muted-foreground mb-8 mt-1">{todayWorkout.subtitle}</p>
             </div>
             <button 
-              onClick={() => navigate('/workout-active', {
+              onClick={() => { triggerHaptic(); navigate('/workout-active', {
                 state: {
                   routineName: todayWorkout.title,
                   exercises: todayWorkout.exercises.map(ex => ({ ...ex, completed: false }))
                 }
-              })}
-              className="z-10 bg-[#1C64F2] text-white text-[15px] font-bold py-3.5 px-8 rounded-full w-[130px] shadow-lg shadow-blue-500/20 active:scale-95 transition-transform"
+              }); }}
+              className="z-10 bg-[#1C64F2] text-white text-[15px] font-bold py-3.5 px-8 rounded-full w-32 shadow-lg shadow-blue-500/20 active:scale-95 transition-transform"
             >
               Start
             </button>
             
-            {/* Background Image with Dynamic Gradient Overlay */}
             <div className="absolute right-0 bottom-0 top-0 h-full w-[45%] pointer-events-none overflow-hidden rounded-r-[24px]">
               <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-card to-transparent z-10" />
               <div className="absolute inset-0 bg-card/25 z-10" />
@@ -333,7 +383,7 @@ const Index = () => {
         {/* AI Posture Coach Banner Card */}
         <div className="mb-4">
           <div 
-            onClick={() => navigate('/posture-coach')}
+            onClick={() => { triggerHaptic(); navigate('/posture-coach'); }}
             className="bg-gradient-to-br from-[#1C64F2]/10 via-[#10B981]/5 to-transparent border border-[#1C64F2]/20 rounded-[24px] p-6 relative overflow-hidden flex flex-col min-h-[170px] shadow-sm hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer"
           >
             <div className="z-10 w-3/4">
@@ -347,7 +397,6 @@ const Index = () => {
               </p>
             </div>
             
-            {/* Floating Camera overlay icon graphic */}
             <div className="absolute right-6 top-1/2 -translate-y-1/2 h-16 w-16 rounded-2xl bg-[#1C64F2]/10 border border-[#1C64F2]/20 flex items-center justify-center text-[#4A85F6]">
               <Camera className="h-8 w-8 animate-bounce" />
             </div>

@@ -1,29 +1,61 @@
-import { ChevronLeft, MoreVertical, ChevronRight, ChevronDown, Plus, Search, X } from "lucide-react";
-import { useState, useMemo } from "react";
+import { ChevronLeft, MoreVertical, ChevronRight, Plus, Search, X, Minus, Trash2 } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/MobileLayout";
-import { indianFoods, getDefaultMeals, type FoodItem, type MealSlot, type MealEntry } from "@/data/indianFoods";
+import { indianFoods, getDefaultMeals, type FoodItem, type MealSlot } from "@/data/indianFoods";
+
+const triggerHaptic = (intensity: number = 10) => {
+  if (window.navigator && window.navigator.vibrate) {
+    window.navigator.vibrate(intensity);
+  }
+};
+
+// Helper to get a date key like "2026-05-29"
+const getDateKey = (offset: number): string => {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().split("T")[0];
+};
+
+// Helper to load meals for a specific date
+const loadMealsForDate = (dateKey: string): MealSlot[] => {
+  const saved = localStorage.getItem(`ado-diary-meals-${dateKey}`);
+  if (saved) {
+    try { return JSON.parse(saved); } catch { /* ignore */ }
+  }
+  return getDefaultMeals(); // Returns empty meals
+};
+
+// Helper to save meals for a specific date
+const saveMealsForDate = (dateKey: string, meals: MealSlot[]) => {
+  localStorage.setItem(`ado-diary-meals-${dateKey}`, JSON.stringify(meals));
+};
 
 const DietTracker = () => {
   const navigate = useNavigate();
-  const [meals, setMeals] = useState<MealSlot[]>(() => {
-    const saved = localStorage.getItem("ado-diary-meals");
-    if (saved) {
-      try { return JSON.parse(saved); } catch { /* ignore */ }
-    }
-    return getDefaultMeals();
-  });
 
   const [dayOffset, setDayOffset] = useState(0);
+  const dateKey = useMemo(() => getDateKey(dayOffset), [dayOffset]);
+
+  const [meals, setMeals] = useState<MealSlot[]>(() => loadMealsForDate(getDateKey(0)));
   const [showAddFood, setShowAddFood] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [editingEntry, setEditingEntry] = useState<{ mealIdx: number; entryIdx: number } | null>(null);
 
-  // Save meals to localStorage
-  const saveMeals = (updated: MealSlot[]) => {
+  // When day changes, load that day's meals
+  const changeDay = useCallback((newOffset: number) => {
+    setDayOffset(newOffset);
+    const key = getDateKey(newOffset);
+    setMeals(loadMealsForDate(key));
+    setEditingEntry(null);
+  }, []);
+
+  // Persist meals
+  const persistMeals = useCallback((updated: MealSlot[]) => {
     setMeals(updated);
-    localStorage.setItem("ado-diary-meals", JSON.stringify(updated));
-  };
+    saveMealsForDate(dateKey, updated);
+  }, [dateKey]);
 
   // Day label
   const dayLabel = dayOffset === 0 ? "Today" : dayOffset === -1 ? "Yesterday" : dayOffset === 1 ? "Tomorrow" : (() => {
@@ -41,6 +73,8 @@ const DietTracker = () => {
     }));
     return { eaten, protein, carbs, fat };
   }, [meals]);
+
+  const totalEntries = useMemo(() => meals.reduce((s, m) => s + m.entries.length, 0), [meals]);
 
   const userWeight = parseInt(localStorage.getItem("ado-user-weight") || "70");
   const userGoal = localStorage.getItem("ado-user-goal") || "";
@@ -71,29 +105,68 @@ const DietTracker = () => {
     });
   }, [search, selectedCategory]);
 
+  // ===== CRUD OPERATIONS =====
+
+  // CREATE: Add food to a meal
   const addFoodToMeal = (mealIndex: number, food: FoodItem) => {
-    const updated = [...meals];
-    const existing = updated[mealIndex].entries.findIndex(e => e.food.id === food.id);
-    if (existing >= 0) {
-      updated[mealIndex].entries[existing].quantity += 1;
-    } else {
-      updated[mealIndex].entries.push({ food, quantity: 1 });
-    }
-    saveMeals(updated);
+    triggerHaptic(15);
+    const updated = meals.map((m, i) => {
+      if (i !== mealIndex) return m;
+      const existing = m.entries.findIndex(e => e.food.id === food.id);
+      if (existing >= 0) {
+        const newEntries = [...m.entries];
+        newEntries[existing] = { ...newEntries[existing], quantity: newEntries[existing].quantity + 1 };
+        return { ...m, entries: newEntries };
+      }
+      return { ...m, entries: [...m.entries, { food, quantity: 1 }] };
+    });
+    persistMeals(updated);
     setShowAddFood(null);
     setSearch("");
 
     // Also log to diet-log for other pages
-    const today = new Date().toISOString().split("T")[0];
+    const today = dateKey;
     const dietLog = JSON.parse(localStorage.getItem("ado-diet-log") || "[]");
     dietLog.push({ date: today, calories: food.calories, protein: food.protein, carbs: food.carbs, fat: food.fat, fiber: food.fiber });
     localStorage.setItem("ado-diet-log", JSON.stringify(dietLog));
   };
 
+  // UPDATE: Change quantity of an entry
+  const updateQuantity = (mealIndex: number, entryIndex: number, delta: number) => {
+    triggerHaptic(10);
+    const updated = meals.map((m, i) => {
+      if (i !== mealIndex) return m;
+      const newEntries = [...m.entries];
+      const newQty = newEntries[entryIndex].quantity + delta;
+      if (newQty <= 0) {
+        newEntries.splice(entryIndex, 1);
+        setEditingEntry(null);
+      } else {
+        newEntries[entryIndex] = { ...newEntries[entryIndex], quantity: newQty };
+      }
+      return { ...m, entries: newEntries };
+    });
+    persistMeals(updated);
+  };
+
+  // DELETE: Remove food from a meal
   const removeFoodFromMeal = (mealIndex: number, entryIndex: number) => {
-    const updated = [...meals];
-    updated[mealIndex].entries.splice(entryIndex, 1);
-    saveMeals(updated);
+    triggerHaptic(20);
+    const updated = meals.map((m, i) => {
+      if (i !== mealIndex) return m;
+      const newEntries = [...m.entries];
+      newEntries.splice(entryIndex, 1);
+      return { ...m, entries: newEntries };
+    });
+    persistMeals(updated);
+    setEditingEntry(null);
+  };
+
+  // Clear all entries for today
+  const clearAllMeals = () => {
+    triggerHaptic(30);
+    const updated = meals.map(m => ({ ...m, entries: [] }));
+    persistMeals(updated);
   };
 
   const categories = [
@@ -132,6 +205,10 @@ const DietTracker = () => {
     );
   };
 
+  // Determine if an entry is being edited
+  const isEditing = (mi: number, ei: number) =>
+    editingEntry?.mealIdx === mi && editingEntry?.entryIdx === ei;
+
   return (
     <MobileLayout>
       <div className="animate-fade-in px-4 pt-4 pb-6">
@@ -141,21 +218,21 @@ const DietTracker = () => {
             <ChevronLeft className="h-5 w-5" />
           </button>
           <h1 className="text-base font-bold">Diary</h1>
-          <button className="p-1">
+          <button className="p-1" onClick={() => { if (totalEntries > 0 && confirm("Clear all entries for this day?")) clearAllMeals(); }}>
             <MoreVertical className="h-5 w-5 text-muted-foreground" />
           </button>
         </div>
 
         {/* Day Navigator */}
         <div className="mt-4 flex items-center justify-center gap-4">
-          <button onClick={() => setDayOffset(d => d - 1)} className="p-1.5 rounded-full bg-secondary active:scale-90 transition-transform">
+          <button onClick={() => changeDay(dayOffset - 1)} className="p-1.5 rounded-full bg-secondary active:scale-90 transition-transform">
             <ChevronLeft className="h-4 w-4 text-muted-foreground" />
           </button>
           <div className="flex items-center gap-2 rounded-full bg-secondary px-4 py-2">
             <span className="text-lg">📅</span>
             <span className="text-sm font-bold">{dayLabel}</span>
           </div>
-          <button onClick={() => setDayOffset(d => d + 1)} className="p-1.5 rounded-full bg-secondary active:scale-90 transition-transform">
+          <button onClick={() => changeDay(dayOffset + 1)} className="p-1.5 rounded-full bg-secondary active:scale-90 transition-transform">
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
@@ -171,15 +248,23 @@ const DietTracker = () => {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-black text-primary">{Math.max(0, remaining).toLocaleString()}</p>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Kcal Left</p>
+              <p className={`text-3xl font-black transition-colors duration-500 ${
+                totalEntries === 0 ? "text-muted-foreground" : remaining < 0 ? "text-red-500" : "text-primary"
+              }`}>
+                {totalEntries === 0 ? dailyGoal.toLocaleString() : Math.max(0, remaining).toLocaleString()}
+              </p>
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                {totalEntries === 0 ? "Start Logging" : "Kcal Left"}
+              </p>
             </div>
           </div>
 
           {/* Stats Row */}
           <div className="mt-4 flex items-center gap-4">
             <div className="flex-1">
-              <p className="text-lg font-bold">{totals.eaten.toLocaleString()}</p>
+              <p className={`text-lg font-bold transition-all duration-500 ${totals.eaten === 0 ? "text-muted-foreground" : ""}`}>
+                {totals.eaten.toLocaleString()}
+              </p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Eaten</p>
             </div>
             <div className="flex-1">
@@ -187,7 +272,11 @@ const DietTracker = () => {
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Burned</p>
             </div>
             <div className="flex-1">
-              <p className="text-lg font-bold text-primary">{net.toLocaleString()}</p>
+              <p className={`text-lg font-bold transition-all duration-500 ${
+                totalEntries === 0 ? "text-muted-foreground" : net < 0 ? "text-green-500" : "text-primary"
+              }`}>
+                {totalEntries === 0 ? "—" : net.toLocaleString()}
+              </p>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Net</p>
             </div>
           </div>
@@ -195,10 +284,17 @@ const DietTracker = () => {
           {/* Progress Bar */}
           <div className="mt-3 h-2.5 rounded-full bg-secondary overflow-hidden">
             <div
-              className="h-full rounded-full bg-primary transition-all duration-700"
+              className={`h-full rounded-full transition-all duration-700 ease-out ${
+                calorieProgress > 100 ? "bg-red-500" : "bg-primary"
+              }`}
               style={{ width: `${calorieProgress}%` }}
             />
           </div>
+          {totalEntries === 0 && (
+            <p className="mt-2 text-center text-[10px] text-muted-foreground/70 italic">
+              Add food to start tracking your calories
+            </p>
+          )}
         </div>
 
         {/* Macro Circles */}
@@ -212,7 +308,11 @@ const DietTracker = () => {
         <div className="mt-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold">Meals</h2>
-            <button className="text-xs font-semibold text-primary">Edit</button>
+            {totalEntries > 0 && (
+              <span className="text-[10px] font-semibold text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                {totalEntries} item{totalEntries !== 1 ? "s" : ""} logged
+              </span>
+            )}
           </div>
 
           <div className="mt-3 space-y-3">
@@ -224,28 +324,81 @@ const DietTracker = () => {
                     <span className="text-lg">{meal.emoji}</span>
                     <span className="text-xs font-bold uppercase tracking-wider">{meal.name}</span>
                   </div>
-                  <span className="text-sm font-bold">{mealCalories(meal)} kcal</span>
+                  <span className={`text-sm font-bold transition-colors duration-300 ${
+                    mealCalories(meal) === 0 ? "text-muted-foreground" : ""
+                  }`}>
+                    {mealCalories(meal)} kcal
+                  </span>
                 </div>
+
+                {/* Empty State for meal */}
+                {meal.entries.length === 0 && (
+                  <div className="px-4 py-4 text-center">
+                    <p className="text-[11px] text-muted-foreground/60 italic">No food logged yet</p>
+                  </div>
+                )}
 
                 {/* Food Entries */}
                 {meal.entries.map((entry, ei) => (
-                  <div key={ei} className="flex items-center gap-3 px-4 py-2.5 border-b border-border/30 last:border-b-0">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-lg">
-                      {entry.food.emoji}
+                  <div key={ei} className="border-b border-border/30 last:border-b-0">
+                    <div
+                      className={`flex items-center gap-3 px-4 py-2.5 transition-colors cursor-pointer ${
+                        isEditing(mealIndex, ei) ? "bg-primary/5" : ""
+                      }`}
+                      onClick={() => {
+                        triggerHaptic(5);
+                        setEditingEntry(
+                          isEditing(mealIndex, ei) ? null : { mealIdx: mealIndex, entryIdx: ei }
+                        );
+                      }}
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-lg">
+                        {entry.food.emoji}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold truncate">{entry.food.name}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {entry.customServing || entry.food.serving}
+                          {entry.quantity > 1 && <span className="font-semibold text-primary"> × {entry.quantity}</span>}
+                          {entry.food.tags[0] && <> · <span className="text-primary/70">{entry.food.tags[0]}</span></>}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground">{entry.food.calories * entry.quantity} kcal</span>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold truncate">{entry.food.name}</p>
-                      <p className="text-[10px] text-muted-foreground">
-                        {entry.customServing || entry.food.serving}
-                        {entry.food.tags[0] && <> · <span className="text-primary/70">{entry.food.tags[0]}</span></>}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-muted-foreground">{entry.food.calories * entry.quantity} kcal</span>
-                      <button onClick={() => removeFoodFromMeal(mealIndex, ei)} className="p-0.5 rounded-full hover:bg-destructive/10 transition-colors">
-                        <X className="h-3 w-3 text-muted-foreground" />
-                      </button>
-                    </div>
+
+                    {/* Expanded edit controls */}
+                    {isEditing(mealIndex, ei) && (
+                      <div className="flex items-center justify-between px-4 py-2 bg-secondary/40 animate-fade-in">
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); updateQuantity(mealIndex, ei, -1); }}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary active:scale-90 transition-transform"
+                          >
+                            <Minus className="h-3.5 w-3.5 text-muted-foreground" />
+                          </button>
+                          <span className="w-10 text-center text-sm font-bold">{entry.quantity}</span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); updateQuantity(mealIndex, ei, 1); }}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary active:scale-90 transition-transform"
+                          >
+                            <Plus className="h-3.5 w-3.5 text-primary" />
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                          <span>P: {(entry.food.protein * entry.quantity).toFixed(1)}g</span>
+                          <span>C: {(entry.food.carbs * entry.quantity).toFixed(1)}g</span>
+                          <span>F: {(entry.food.fat * entry.quantity).toFixed(1)}g</span>
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); removeFoodFromMeal(mealIndex, ei); }}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/10 active:scale-90 transition-transform"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
 
@@ -280,12 +433,16 @@ const DietTracker = () => {
 
       {/* Add Food Modal */}
       {showAddFood !== null && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60" onClick={() => { setShowAddFood(null); setSearch(""); }}>
-          <div onClick={e => e.stopPropagation()} className="w-full max-w-md rounded-t-3xl bg-card p-5 pb-8 animate-fade-in max-h-[85vh] flex flex-col">
+        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => { setShowAddFood(null); setSearch(""); }}>
+          <div
+            onClick={e => e.stopPropagation()}
+            className="w-[90%] mx-auto rounded-t-3xl bg-card p-5 pb-8 animate-slide-up flex flex-col shadow-2xl"
+            style={{ height: '85vh', maxHeight: '85vh', marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
+          >
             {/* Modal Header */}
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-bold">Add to {meals[showAddFood]?.name || "Meal"}</h2>
-              <button onClick={() => { setShowAddFood(null); setSearch(""); }} className="p-1">
+            <div className="flex items-center justify-between mb-4 shrink-0">
+              <h2 className="text-lg font-bold">Add to {meals[showAddFood]?.name || "Meal"}</h2>
+              <button onClick={() => { setShowAddFood(null); setSearch(""); }} className="p-1.5 hover:bg-secondary/40 rounded-full transition-colors">
                 <X className="h-5 w-5 text-muted-foreground" />
               </button>
             </div>
@@ -301,6 +458,11 @@ const DietTracker = () => {
                 className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
                 autoFocus
               />
+              {search && (
+                <button onClick={() => setSearch("")} className="p-0.5">
+                  <X className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              )}
             </div>
 
             {/* Category Filters */}

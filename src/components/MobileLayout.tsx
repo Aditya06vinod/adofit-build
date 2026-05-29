@@ -11,10 +11,19 @@ const MobileLayout = ({ children, hideNav }: { children: ReactNode; hideNav?: bo
   }, [pathname]);
 
   return (
-    <SafeAreaView className="bg-background">
-      <div className={`flex-1 ${hideNav ? "" : "pb-20"}`}>{children}</div>
+    <div className="flex min-h-screen flex-col bg-background">
+      <div
+        className={`flex-1 ${hideNav ? "" : "pb-24"}`}
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingLeft: 'env(safe-area-inset-left, 0px)',
+          paddingRight: 'env(safe-area-inset-right, 0px)',
+        }}
+      >
+        {children}
+      </div>
       {!hideNav && <BottomNav />}
-    </SafeAreaView>
+    </div>
   );
 };
 
