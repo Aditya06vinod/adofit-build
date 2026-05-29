@@ -979,7 +979,7 @@ const DietPlan = () => {
         {/* Import Modal */}
         {showImportModal && (
           <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60" onClick={() => setShowImportModal(false)}>
-            <div onClick={e => e.stopPropagation()} className="w-full max-w-md rounded-t-3xl bg-card p-5 pb-8 animate-fade-in max-h-[85vh] overflow-y-auto">
+            <div onClick={e => e.stopPropagation()} className="w-full rounded-t-3xl bg-card p-5 pb-8 animate-fade-in max-h-[85vh] overflow-y-auto">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-bold">📥 Import Diet Data</h2>
                 <button onClick={() => setShowImportModal(false)} className="p-1"><X className="h-5 w-5 text-muted-foreground" /></button>

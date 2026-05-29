@@ -166,10 +166,10 @@ const Welcome = () => {
                 <Dumbbell className="h-12 w-12 text-background" />
               </div>
               <h1 className="text-3xl font-black tracking-tight">Ado Work</h1>
-              <p className="mt-2 text-xs text-muted-foreground max-w-xs">
+              <p className="mt-2 text-xs text-muted-foreground w-[90%] mx-auto">
                 Your personal fitness companion. Let's set up your profile.
               </p>
-              <div className="mt-8 space-y-2.5 w-full max-w-xs">
+              <div className="mt-8 space-y-2.5 w-[90%] mx-auto">
                 {[
                   { emoji: "🏋️", text: "Track workouts & body parts" },
                   { emoji: "🥗", text: "Personalized diet plans" },
@@ -202,7 +202,7 @@ const Welcome = () => {
                 onKeyDown={e => e.key === "Enter" && canContinue() && handleNext()}
                 autoFocus
                 maxLength={30}
-                className="mt-6 w-full max-w-xs rounded-2xl border border-border bg-secondary/30 px-5 py-4 text-center text-lg font-bold text-foreground placeholder:text-muted-foreground outline-none ring-2 ring-transparent focus:ring-foreground transition-all"
+                className="mt-6 w-[90%] mx-auto rounded-2xl border border-border bg-secondary/30 px-5 py-4 text-center text-lg font-bold text-foreground placeholder:text-muted-foreground outline-none ring-2 ring-transparent focus:ring-foreground transition-all"
               />
             </div>
           )}
@@ -216,7 +216,7 @@ const Welcome = () => {
               <h1 className="text-xl font-black">About you</h1>
               <p className="mt-1 text-xs text-muted-foreground">This helps us customize your plan</p>
 
-              <div className="mt-6 w-full max-w-xs space-y-6">
+              <div className="mt-6 w-[90%] mx-auto space-y-6">
                 <div>
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Gender</label>
                   <div className="mt-2 grid grid-cols-3 gap-2">
@@ -266,7 +266,7 @@ const Welcome = () => {
               <h1 className="text-xl font-black">Your physique</h1>
               <p className="mt-1 text-xs text-muted-foreground">We'll calculate your ideal plan</p>
 
-              <div className="mt-6 w-full max-w-xs space-y-5">
+              <div className="mt-6 w-[90%] mx-auto space-y-5">
                 <div>
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Height (cm)</label>
                   <div className="mt-2 relative">
@@ -330,7 +330,7 @@ const Welcome = () => {
               <h1 className="text-xl font-black">What's your goal?</h1>
               <p className="mt-1 text-xs text-muted-foreground">Pick what drives you most</p>
 
-              <div className="mt-6 w-full max-w-xs space-y-2">
+              <div className="mt-6 w-[90%] mx-auto space-y-2">
                 {goalOptions.map(g => (
                   <button
                     key={g.id}
@@ -366,7 +366,7 @@ const Welcome = () => {
               <h1 className="text-xl font-black">Workout style</h1>
               <p className="mt-1 text-xs text-muted-foreground">How do you like to train?</p>
 
-              <div className="mt-6 w-full max-w-xs space-y-5">
+              <div className="mt-6 w-[90%] mx-auto space-y-5">
                 <div>
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Session Duration</label>
                   <div className="mt-2 grid grid-cols-3 gap-2">
@@ -423,7 +423,7 @@ const Welcome = () => {
               <h1 className="text-xl font-black">Focus areas</h1>
               <p className="mt-1 text-xs text-muted-foreground">Select body parts to prioritize (multiple)</p>
 
-              <div className="mt-6 w-full max-w-xs grid grid-cols-2 gap-2.5">
+              <div className="mt-6 w-[90%] mx-auto grid grid-cols-2 gap-2.5">
                 {bodyPartOptions.map(bp => (
                   <button
                     key={bp.id}
@@ -456,7 +456,7 @@ const Welcome = () => {
               <h1 className="text-xl font-black">You're all set, {data.name}! 🎉</h1>
               <p className="mt-1 text-xs text-muted-foreground">Here's your profile summary</p>
 
-              <div className="mt-6 w-full max-w-xs space-y-2">
+              <div className="mt-6 w-[90%] mx-auto space-y-2">
                 {[
                   { label: "Gender", value: data.gender || "—", emoji: "👤" },
                   { label: "Age", value: data.age ? `${data.age} years` : "—", emoji: "🎂" },

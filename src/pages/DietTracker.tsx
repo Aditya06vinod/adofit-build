@@ -4,8 +4,15 @@ import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/MobileLayout";
 import { indianFoods, getDefaultMeals, type FoodItem, type MealSlot, type MealEntry } from "@/data/indianFoods";
 
+const triggerHaptic = (intensity: number = 10) => {
+  if (window.navigator && window.navigator.vibrate) {
+    window.navigator.vibrate(intensity);
+  }
+};
+
 const DietTracker = () => {
   const navigate = useNavigate();
+  // ... rest of component
   const [meals, setMeals] = useState<MealSlot[]>(() => {
     const saved = localStorage.getItem("ado-diary-meals");
     if (saved) {
@@ -72,6 +79,7 @@ const DietTracker = () => {
   }, [search, selectedCategory]);
 
   const addFoodToMeal = (mealIndex: number, food: FoodItem) => {
+    triggerHaptic(15);
     const updated = [...meals];
     const existing = updated[mealIndex].entries.findIndex(e => e.food.id === food.id);
     if (existing >= 0) {
@@ -91,6 +99,7 @@ const DietTracker = () => {
   };
 
   const removeFoodFromMeal = (mealIndex: number, entryIndex: number) => {
+    triggerHaptic(20);
     const updated = [...meals];
     updated[mealIndex].entries.splice(entryIndex, 1);
     saveMeals(updated);
@@ -280,12 +289,16 @@ const DietTracker = () => {
 
       {/* Add Food Modal */}
       {showAddFood !== null && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60" onClick={() => { setShowAddFood(null); setSearch(""); }}>
-          <div onClick={e => e.stopPropagation()} className="w-full max-w-md rounded-t-3xl bg-card p-5 pb-8 animate-fade-in max-h-[85vh] flex flex-col">
+        <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => { setShowAddFood(null); setSearch(""); }}>
+          <div
+            onClick={e => e.stopPropagation()}
+            className="w-[90%] mx-auto rounded-t-3xl bg-card p-5 pb-8 animate-slide-up flex flex-col shadow-2xl"
+            style={{ height: '85vh', maxHeight: '85vh', marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
+          >
             {/* Modal Header */}
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-bold">Add to {meals[showAddFood]?.name || "Meal"}</h2>
-              <button onClick={() => { setShowAddFood(null); setSearch(""); }} className="p-1">
+            <div className="flex items-center justify-between mb-4 shrink-0">
+              <h2 className="text-lg font-bold">Add to {meals[showAddFood]?.name || "Meal"}</h2>
+              <button onClick={() => { setShowAddFood(null); setSearch(""); }} className="p-1.5 hover:bg-secondary/40 rounded-full transition-colors">
                 <X className="h-5 w-5 text-muted-foreground" />
               </button>
             </div>

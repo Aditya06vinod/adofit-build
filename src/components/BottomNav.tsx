@@ -9,6 +9,12 @@ const navItems = [
   { icon: User, label: "Profile", path: "/profile" },
 ];
 
+const triggerHaptic = (intensity: number = 10) => {
+  if (window.navigator && window.navigator.vibrate) {
+    window.navigator.vibrate(intensity);
+  }
+};
+
 const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -21,7 +27,10 @@ const BottomNav = () => {
           return (
             <button
               key={item.path}
-              onClick={() => navigate(item.path)}
+              onClick={() => {
+                triggerHaptic(item.isCenter ? 20 : 10);
+                navigate(item.path);
+              }}
               className={`flex flex-col items-center gap-0.5 px-3 py-1 transition-all ${
                 item.isCenter ? "relative -mt-6" : ""
               } ${isActive && !item.isCenter ? "text-[#4A85F6]" : !item.isCenter ? "text-muted-foreground" : ""}`}
