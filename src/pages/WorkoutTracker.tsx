@@ -235,6 +235,278 @@ const exerciseInstructions: Record<string, VideoInstruction> = {
       "Keep your core engaged throughout the movement."
     ]
   },
+  "shrug": {
+    youtubeId: "cJRVVxmytaM",
+    steps: [
+      "Stand holding dumbbells or a barbell at your sides/front.",
+      "Elevate your shoulders straight up toward your ears.",
+      "Hold briefly at the top, then lower slowly."
+    ]
+  },
+  "extension": {
+    youtubeId: "ms6gOTSBjRE",
+    steps: [
+      "Hold the weight behind your head or use a cable station.",
+      "Extend your arms overhead by straightening your elbows.",
+      "Slowly lower the weight back behind your head."
+    ]
+  },
+  "kickback": {
+    youtubeId: "ZO81bExngMI",
+    steps: [
+      "Bend forward at the hips, hold a dumbbell in one hand.",
+      "Extend your arm straight back, squeezing the tricep.",
+      "Slowly return to the starting position."
+    ]
+  },
+  "calf raise": {
+    youtubeId: "gwLzBJYoWlI",
+    steps: [
+      "Stand on the edge of a step or platform with heels hanging off.",
+      "Rise up on your toes as high as possible.",
+      "Lower your heels below the platform for a full stretch."
+    ]
+  },
+  "leg extension": {
+    youtubeId: "YyvSfVjQeL0",
+    steps: [
+      "Sit on the machine with your back against the pad.",
+      "Extend your legs until they are straight, squeezing quads.",
+      "Slowly lower the weight back down with control."
+    ]
+  },
+  "leg curl": {
+    youtubeId: "1Tq3QdYUuHs",
+    steps: [
+      "Lie face down or sit on the leg curl machine.",
+      "Curl your legs toward your glutes by bending at the knees.",
+      "Slowly extend your legs back to the start."
+    ]
+  },
+  "good morning": {
+    youtubeId: "YA-h3n9L4YU",
+    steps: [
+      "Place a barbell on your upper back, feet shoulder-width apart.",
+      "Hinge at the hips, lowering your torso until nearly parallel to the floor.",
+      "Drive your hips forward to return to standing."
+    ]
+  },
+  "farmer": {
+    youtubeId: "Fkzk_RqlYig",
+    steps: [
+      "Pick up heavy dumbbells or kettlebells in each hand.",
+      "Stand tall with shoulders back and core braced.",
+      "Walk forward with controlled, steady steps."
+    ]
+  },
+  "step up": {
+    youtubeId: "dQqApCGd5Cw",
+    steps: [
+      "Stand in front of a bench or box, holding dumbbells.",
+      "Step up with one foot, driving through your heel.",
+      "Step back down with control and repeat."
+    ]
+  },
+  "box jump": {
+    youtubeId: "52r_Ul5k03g",
+    steps: [
+      "Stand in front of a sturdy box at an appropriate height.",
+      "Swing your arms and jump onto the box, landing softly.",
+      "Step back down and repeat."
+    ]
+  },
+  "ab wheel": {
+    youtubeId: "rqiTPl9SRsg",
+    steps: [
+      "Kneel on the floor, gripping the ab wheel handles.",
+      "Roll the wheel forward, extending your body as far as possible.",
+      "Use your core to pull the wheel back to the starting position."
+    ]
+  },
+  "woodchop": {
+    youtubeId: "pAplQXk3dkU",
+    steps: [
+      "Stand sideways to a cable machine, grip the handle with both hands.",
+      "Rotate your torso, pulling the cable diagonally across your body.",
+      "Return slowly to the starting position."
+    ]
+  },
+  "bicycle": {
+    youtubeId: "9FGilxCbdz8",
+    steps: [
+      "Lie on your back, hands behind your head, legs raised.",
+      "Bring one knee toward your chest while rotating the opposite elbow toward it.",
+      "Alternate sides in a pedaling motion."
+    ]
+  },
+  "sit up": {
+    youtubeId: "1fbU_MkV7NE",
+    steps: [
+      "Lie on your back with knees bent and feet flat.",
+      "Engage your core to lift your torso up toward your knees.",
+      "Lower back down with control."
+    ]
+  },
+  "dead bug": {
+    youtubeId: "4XLEnwUr1d8",
+    steps: [
+      "Lie on your back with arms extended toward the ceiling and knees at 90 degrees.",
+      "Slowly extend one arm and the opposite leg toward the floor.",
+      "Return to start and repeat on the other side."
+    ]
+  },
+  "v-up": {
+    youtubeId: "iP2fjvG0yOE",
+    steps: [
+      "Lie flat on your back with arms extended overhead.",
+      "Simultaneously lift your legs and torso to touch your toes.",
+      "Lower back down with control."
+    ]
+  },
+  "crunch": {
+    youtubeId: "Xyd_fa5zoEU",
+    steps: [
+      "Lie on your back with knees bent, hands behind your head.",
+      "Curl your shoulders off the floor by contracting your abs.",
+      "Lower back down slowly without fully relaxing."
+    ]
+  },
+  "superman": {
+    youtubeId: "z6PJMT2y8GQ",
+    steps: [
+      "Lie face down with arms extended in front of you.",
+      "Simultaneously lift your arms, chest, and legs off the floor.",
+      "Hold briefly, then lower back down."
+    ]
+  },
+  "bird dog": {
+    youtubeId: "wiFNA3sqjCA",
+    steps: [
+      "Start on all fours with hands under shoulders and knees under hips.",
+      "Extend one arm forward and the opposite leg backward simultaneously.",
+      "Return to start and repeat on the other side."
+    ]
+  },
+  "back extension": {
+    youtubeId: "ph3pddpKzzw",
+    steps: [
+      "Position yourself on a back extension bench, feet secured.",
+      "Lower your upper body toward the floor by hinging at the hips.",
+      "Raise back up until your body is in a straight line."
+    ]
+  },
+  "mountain climber": {
+    youtubeId: "nmwgirgXLYM",
+    steps: [
+      "Start in a push-up position with arms straight.",
+      "Drive one knee toward your chest rapidly.",
+      "Alternate legs in a running motion while keeping core tight."
+    ]
+  },
+  "burpee": {
+    youtubeId: "dZgVxmf6jkA",
+    steps: [
+      "Stand tall, then squat down and place hands on the floor.",
+      "Jump your feet back into a plank, do a push-up.",
+      "Jump feet forward and explosively jump up with arms overhead."
+    ]
+  },
+  "jump rope": {
+    youtubeId: "u3zgKRBgMCA",
+    steps: [
+      "Hold the rope handles at hip height, elbows close to your body.",
+      "Swing the rope overhead and jump just high enough to clear it.",
+      "Land softly on the balls of your feet and maintain a steady rhythm."
+    ]
+  },
+  "nordic": {
+    youtubeId: "jBO2d7Rnf5E",
+    steps: [
+      "Kneel on the floor with someone holding your ankles.",
+      "Slowly lower your body forward, resisting with your hamstrings.",
+      "Catch yourself at the bottom and push back up."
+    ]
+  },
+  "pallof": {
+    youtubeId: "AH_QZLm_0-s",
+    steps: [
+      "Stand sideways to a cable machine, hold the handle at chest height.",
+      "Press the handle straight out in front of you, resisting rotation.",
+      "Hold briefly, then bring it back to your chest."
+    ]
+  },
+  "reverse hyper": {
+    youtubeId: "ZeH-m9BuNfU",
+    steps: [
+      "Lie face down on a bench with your hips at the edge.",
+      "Raise your legs behind you by squeezing your glutes.",
+      "Lower them slowly back down."
+    ]
+  },
+  "dragon flag": {
+    youtubeId: "njKXkRH7nik",
+    steps: [
+      "Lie on a bench, grip the edges behind your head.",
+      "Raise your entire body up, keeping it straight like a flag.",
+      "Lower slowly without letting your back touch the bench."
+    ]
+  },
+  "frog pump": {
+    youtubeId: "BrKGnF-MUVs",
+    steps: [
+      "Lie on your back with soles of feet together, knees flared out.",
+      "Drive your hips up by squeezing your glutes.",
+      "Lower back down and repeat."
+    ]
+  },
+  "band pull": {
+    youtubeId: "iaaU-nF-sSo",
+    steps: [
+      "Hold a resistance band in front of you at chest height.",
+      "Pull the band apart by squeezing your rear delts and upper back.",
+      "Return to the starting position with control."
+    ]
+  },
+  "chin up": {
+    youtubeId: "brhRXlOhGfY",
+    steps: [
+      "Grip the bar with palms facing toward you, shoulder-width apart.",
+      "Pull yourself up until your chin is above the bar.",
+      "Lower yourself slowly back to a dead hang."
+    ]
+  },
+  "rack pull": {
+    youtubeId: "u7XRkreKNBM",
+    steps: [
+      "Set the barbell at knee height on a squat rack.",
+      "Grip the bar and stand up by extending your hips and knees.",
+      "Lower the bar back to the rack with control."
+    ]
+  },
+  "upright row": {
+    youtubeId: "amCU-ziHITM",
+    steps: [
+      "Hold a barbell or dumbbells in front of your thighs.",
+      "Pull the weight up along your body to chin height, elbows flaring out.",
+      "Lower the weight back down slowly."
+    ]
+  },
+  "neck": {
+    youtubeId: "gJ3gP0cisbM",
+    steps: [
+      "Sit or stand with good posture and place resistance on your head.",
+      "Move your head against the resistance in the target direction.",
+      "Return slowly to neutral position."
+    ]
+  },
+  "dead hang": {
+    youtubeId: "dL-1CLsrblY",
+    steps: [
+      "Grip a pull-up bar with both hands, arms fully extended.",
+      "Hang freely, engaging your shoulders and core.",
+      "Hold for the prescribed time, then release."
+    ]
+  },
   "raise": {
     youtubeId: "hdZkxA1EDwg",
     steps: [

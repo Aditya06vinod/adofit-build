@@ -2,9 +2,11 @@ import { ReactNode, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import BottomNav from "./BottomNav";
 import SafeAreaView from "./ui/SafeAreaView";
+import { useSwipeNavigation } from "@/hooks/useSwipeNavigation";
 
 const MobileLayout = ({ children, hideNav }: { children: ReactNode; hideNav?: boolean }) => {
   const { pathname } = useLocation();
+  const { onTouchStart, onTouchEnd } = useSwipeNavigation();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -19,6 +21,8 @@ const MobileLayout = ({ children, hideNav }: { children: ReactNode; hideNav?: bo
           paddingLeft: 'env(safe-area-inset-left, 0px)',
           paddingRight: 'env(safe-area-inset-right, 0px)',
         }}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
       >
         {children}
       </div>
@@ -28,3 +32,4 @@ const MobileLayout = ({ children, hideNav }: { children: ReactNode; hideNav?: bo
 };
 
 export default MobileLayout;
+
