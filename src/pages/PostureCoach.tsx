@@ -82,7 +82,11 @@ const PostureCoach = () => {
   const [isListening, setIsListening] = useState(false);
 
   // Gemini API States
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem("ado-gemini-api-key") || "");
+  const [apiKey, setApiKey] = useState(() => {
+    const saved = localStorage.getItem("ado-gemini-api-key");
+    if (saved) return saved;
+    return "";
+  });
   const [showKeyInput, setShowKeyInput] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -170,9 +174,9 @@ const PostureCoach = () => {
         ]
       };
 
-      // 3. Invoke Google AI Studio Gemini API
+      // 3. Invoke Google AI Studio Gemini API - Gemini 2.0 Flash (v1beta)
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: {
@@ -182,11 +186,12 @@ const PostureCoach = () => {
         }
       );
 
+      const resData = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        throw new Error(`API Error: ${response.status}`);
+        throw new Error(resData.error?.message || `API Error: ${response.status}`);
       }
 
-      const resData = await response.json();
       const text = resData.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
 
       if (text) {
@@ -259,7 +264,7 @@ const PostureCoach = () => {
       };
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
         {
           method: "POST",
           headers: {

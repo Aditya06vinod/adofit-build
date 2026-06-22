@@ -380,6 +380,34 @@ const Index = () => {
           </div>
         </div>
 
+        {/* AI Food Scanner Card */}
+        <div className="mb-4">
+          <div
+            onClick={() => { triggerHaptic(); navigate('/food-scanner'); }}
+            className="bg-gradient-to-br from-[#FF8A4C]/10 via-[#F59E0B]/5 to-transparent border border-[#FF8A4C]/20 rounded-[24px] p-6 relative overflow-hidden flex flex-col min-h-[170px] shadow-sm hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer"
+          >
+            <div className="z-10 w-3/4">
+              <div className="flex items-center gap-1 bg-[#FF8A4C]/15 border border-[#FF8A4C]/25 text-[#FF8A4C] text-[8px] font-black tracking-wider uppercase px-2.5 py-1 rounded-full w-fit mb-3">
+                <Sparkles className="h-3 w-3 animate-pulse" />
+                <span>AI Nutrition Analysis</span>
+              </div>
+              <h2 className="text-xl font-bold leading-tight mb-1 text-card-foreground">AI Food Scanner</h2>
+              <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 mb-4">
+                Scan your meal or upload a photo to instantly identify food items and track calories using Gemini AI.
+              </p>
+            </div>
+
+            <div className="absolute right-6 top-1/2 -translate-y-1/2 h-16 w-16 rounded-2xl bg-[#FF8A4C]/10 border border-[#FF8A4C]/20 flex items-center justify-center text-[#FF8A4C]">
+              <Camera className="h-8 w-8 animate-bounce" />
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#FF8A4C] mt-auto z-10 hover:underline">
+              <span>Scan My Meal</span>
+              <span className="text-sm">→</span>
+            </div>
+          </div>
+        </div>
+
         {/* AI Posture Coach Banner Card */}
         <div className="mb-4">
           <div 

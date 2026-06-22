@@ -24,6 +24,7 @@ import Log from "./pages/Log";
 import Install from "./pages/Install";
 import Welcome from "./pages/Welcome";
 import PostureCoach from "./pages/PostureCoach";
+import FoodScanner from "./pages/FoodScanner";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/sleep" element={<RequireOnboarding><SleepSchedule /></RequireOnboarding>} />
             <Route path="/install" element={<RequireOnboarding><Install /></RequireOnboarding>} />
             <Route path="/posture-coach" element={<RequireOnboarding><PostureCoach /></RequireOnboarding>} />
+            <Route path="/food-scanner" element={<RequireOnboarding><FoodScanner /></RequireOnboarding>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

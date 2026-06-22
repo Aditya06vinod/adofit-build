@@ -1,5 +1,5 @@
-import { ChevronLeft, Palette, LogIn, Mail, ExternalLink, Trash2, Upload, FileText, X, User, Save } from "lucide-react";
-import { useState, useRef } from "react";
+import { ChevronLeft, Palette, LogIn, Mail, ExternalLink, Trash2, Upload, FileText, X, User, Save, Sparkles } from "lucide-react";
+import { useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/MobileLayout";
 import { themes, useTheme } from "@/contexts/ThemeContext";
@@ -129,12 +129,25 @@ const Settings = () => {
   const navigate = useNavigate();
   const { currentTheme, setTheme } = useTheme();
   const { toast } = useToast();
-  const [section, setSection] = useState<"themes" | "login" | "support" | "profile" | null>(null);
+  const [section, setSection] = useState<"themes" | "login" | "support" | "profile" | "ai" | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState("");
   const [importLabel, setImportLabel] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [apiKey, setApiKey] = useState(() => {
+    const saved = localStorage.getItem("ado-gemini-api-key");
+    if (saved) return saved;
+    // Pre-fill with provided key if nothing is saved
+    return "";
+  });
+
+  const saveApiKey = () => {
+    localStorage.setItem("ado-gemini-api-key", apiKey);
+    toast({ title: "API Key Saved", description: "Your Gemini API features are now active." });
+    setSection(null);
+  };
 
   // Profile edit state
   const [profileName, setProfileName] = useState(() => localStorage.getItem("ado-user-name") || "");
@@ -226,7 +239,13 @@ const Settings = () => {
     setShowImportModal(false);
   };
 
-  const importedCount = JSON.parse(localStorage.getItem("ado-imported-diets") || "[]").length;
+  const importedCount = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem("ado-imported-diets") || "[]").length;
+    } catch {
+      return 0;
+    }
+  }, []);
 
   return (
     <MobileLayout>
@@ -382,6 +401,36 @@ const Settings = () => {
             </p>
           </div>
         </button>
+
+        {/* AI Configuration */}
+        <button onClick={() => toggleSection("ai")} className="mt-3 flex w-full items-center gap-3 rounded-2xl gym-gradient-card p-4 transition-transform active:scale-[0.98]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/20"><Sparkles className="h-5 w-5 text-primary" /></div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-bold">AI Features</p>
+            <p className="text-[10px] text-muted-foreground">{apiKey ? "AI Setup Active ✅" : "Configure Gemini API Key"}</p>
+          </div>
+        </button>
+
+        {section === "ai" && (
+          <div className="mt-3 space-y-3 animate-fade-in gym-gradient-card rounded-2xl p-4">
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
+              Paste your Gemini API Key from Google AI Studio to enable real-time food scanning and posture coaching.
+            </p>
+            <input
+              type="password"
+              placeholder="Enter Gemini API Key..."
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              className="w-full rounded-xl bg-secondary px-3 py-2.5 text-xs font-bold outline-none text-foreground"
+            />
+            <button
+              onClick={saveApiKey}
+              className="w-full bg-primary text-primary-foreground font-bold text-xs py-3 rounded-xl active:scale-95 transition-transform"
+            >
+              Save API Key
+            </button>
+          </div>
+        )}
 
         {/* Login Section */}
         <button onClick={() => toggleSection("login")} className="mt-3 flex w-full items-center gap-3 rounded-2xl gym-gradient-card p-4 transition-transform active:scale-[0.98]">

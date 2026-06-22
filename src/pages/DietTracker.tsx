@@ -1,7 +1,8 @@
-import { ChevronLeft, MoreVertical, ChevronRight, ChevronDown, Plus, Search, X } from "lucide-react";
-import { useState, useMemo } from "react";
+import { ChevronLeft, MoreVertical, ChevronRight, ChevronDown, Plus, Search, X, Camera } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/MobileLayout";
+import { useToast } from "@/hooks/use-toast";
 import { indianFoods, getDefaultMeals, type FoodItem, type MealSlot, type MealEntry } from "@/data/indianFoods";
 
 const triggerHaptic = (intensity: number = 10) => {
@@ -12,6 +13,7 @@ const triggerHaptic = (intensity: number = 10) => {
 
 const DietTracker = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   // ... rest of component
   const [meals, setMeals] = useState<MealSlot[]>(() => {
     const saved = localStorage.getItem("ado-diary-meals");
@@ -25,6 +27,23 @@ const DietTracker = () => {
   const [showAddFood, setShowAddFood] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+
+  // Check for scanned food from FoodScanner page
+  useEffect(() => {
+    const pending = localStorage.getItem("ado-pending-scanned-food");
+    if (pending) {
+      try {
+        const food = JSON.parse(pending);
+        // Add to breakfast by default (index 0) or current meal if open
+        const mealIdx = showAddFood !== null ? showAddFood : 0;
+        addFoodToMeal(mealIdx, food);
+        localStorage.removeItem("ado-pending-scanned-food");
+        toast({ title: "Food added from AI scan! 🍲" });
+      } catch (e) {
+        console.error("Error adding scanned food", e);
+      }
+    }
+  }, [showAddFood, toast]);
 
   // Save meals to localStorage
   const saveMeals = (updated: MealSlot[]) => {
@@ -304,16 +323,25 @@ const DietTracker = () => {
             </div>
 
             {/* Search */}
-            <div className="flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5 mb-3">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search Indian foods, fruits, veggies..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
-                autoFocus
-              />
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex-1 flex items-center gap-2 rounded-xl bg-secondary px-3 py-2.5">
+                <Search className="h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search Indian foods, fruits, veggies..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
+                  autoFocus
+                />
+              </div>
+              <button
+                onClick={() => navigate("/food-scanner")}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary active:scale-90 transition-transform"
+                title="Scan Food with AI"
+              >
+                <Camera className="h-5 w-5" />
+              </button>
             </div>
 
             {/* Category Filters */}
