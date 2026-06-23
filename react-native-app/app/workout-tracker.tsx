@@ -114,7 +114,16 @@ const WorkoutTracker = () => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
+          <TouchableOpacity
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace("/");
+              }
+            }}
+            style={styles.iconButton}
+          >
             <ChevronLeft size={24} color="#94A3B8" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Log Workout</Text>

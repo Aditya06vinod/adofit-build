@@ -61,7 +61,15 @@ const Progress = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/");
+            }
+          }}
+        >
           <ChevronLeft size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Analytics</Text>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -14,6 +14,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  BackHandler,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -39,6 +40,30 @@ const DietTracker = () => {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [editingEntry, setEditingEntry] = useState<{ mealIdx: number; entryIdx: number } | null>(null);
+
+  const modalVisible = showAddFood !== null;
+  const setModalVisible = useCallback((visible: boolean) => {
+    if (!visible) {
+      setShowAddFood(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    const onBackPress = () => {
+      if (modalVisible) {
+        setModalVisible(false);
+        return true;
+      }
+      return false;
+    };
+
+    const subscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      onBackPress
+    );
+
+    return () => subscription.remove();
+  }, [modalVisible, setModalVisible]);
 
   const triggerHaptic = (type: "light" | "medium" | "heavy" = "light") => {
     if (type === "light") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -133,7 +158,15 @@ const DietTracker = () => {
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/");
+            }
+          }}
+        >
           <ChevronLeft size={24} color="white" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Diary</Text>
@@ -242,7 +275,7 @@ const DietTracker = () => {
       </ScrollView>
 
       {/* Add Food Modal */}
-      <Modal visible={showAddFood !== null} animationType="slide" transparent>
+      <Modal visible={modalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView
           style={styles.modalKeyboardWrapper}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -252,7 +285,7 @@ const DietTracker = () => {
               <View style={styles.modalDragHandle} />
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Add Food</Text>
-                <TouchableOpacity onPress={() => setShowAddFood(null)}>
+                <TouchableOpacity onPress={() => setModalVisible(false)}>
                   <X size={24} color="#94A3B8" />
                 </TouchableOpacity>
               </View>
@@ -302,7 +335,7 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 16, paddingBottom: 100 },
   dayNavigator: { flexDirection: "row", justifyContent: "center", alignItems: "center", marginBottom: 20 },
   navBtn: { padding: 8, backgroundColor: "#1E293B", borderRadius: 20 },
-  dayBadge: { backgroundColor: "#1E293B", paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, mx: 10 },
+  dayBadge: { backgroundColor: "#1E293B", paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, marginHorizontal: 10 },
   dayText: { color: "white", fontWeight: "bold" },
   calorieCard: { backgroundColor: "#1E293B", borderRadius: 20, padding: 20, marginBottom: 20 },
   calorieHeader: { flexDirection: "row", justifyContent: "space-between" },
@@ -342,6 +375,7 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: 'flex-end' },
   modalContent: { backgroundColor: "#1E293B", height: Math.round(Dimensions.get('window').height * 0.85), borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, overflow: 'hidden' },
   modalDragHandle: { width: 40, height: 4, backgroundColor: '#475569', borderRadius: 2, alignSelf: 'center', marginBottom: 12 },
+  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
   modalTitle: { color: "white", fontSize: 18, fontWeight: "bold" },
   foodList: { flex: 1 },
   searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: "#0F172A", padding: 12, borderRadius: 12, marginVertical: 16 },
