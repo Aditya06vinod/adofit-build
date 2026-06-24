@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.os.Bundle
-import android.view.KeyEvent
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -111,7 +110,6 @@ fun WebViewScreen(onWebViewCreated: (WebView) -> Unit, modifier: Modifier = Modi
                 settings.allowContentAccess = true
                 settings.loadWithOverviewMode = true
                 settings.useWideViewPort = true
-                settings.databaseEnabled = true
                 settings.mediaPlaybackRequiresUserGesture = false
 
                 if (activity != null) {
@@ -136,7 +134,7 @@ fun WebViewScreen(onWebViewCreated: (WebView) -> Unit, modifier: Modifier = Modi
                 try {
                     val htmlContent = context.assets.open("index.html").bufferedReader().use { it.readText() }
                     loadDataWithBaseURL("https://appassets.androidplatform.net/", htmlContent, "text/html", "UTF-8", null)
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     loadUrl("file:///android_asset/index.html")
                 }
             }
