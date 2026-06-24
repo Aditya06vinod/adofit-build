@@ -3,6 +3,10 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- 🟢 FIX 1: Added the required hardware feature tag for the camera -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
@@ -11,7 +15,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:windowSoftInputMode="adjustResize"
+        android:windowSoftInputMode="adjustPan"
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.AdoWorkoutApp">
         <activity
@@ -22,10 +26,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 🟢 FIX 2: Changed screenOrientation to unspecified to satisfy Android 16/ChromeOS requirements -->
         <activity
             android:name=".PostureCoachActivity"
             android:exported="false"
-            android:screenOrientation="portrait" />
+             />
     </application>
 
 </manifest>

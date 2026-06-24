@@ -1,8 +1,9 @@
+import { useEffect, useRef } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Index from "./pages/Index";
 import DietTracker from "./pages/DietTracker";
@@ -28,6 +29,38 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const AndroidBackHandler = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const locationRef = useRef(location.pathname);
+
+  useEffect(() => {
+    locationRef.current = location.pathname;
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const handleBack = () => {
+      // 1. Close overlays first (Radix/Shadcn/Custom)
+      const hasOverlay = !!document.querySelector('.fixed, [role="dialog"], .animate-slide-up, [data-state="open"]');
+      if (hasOverlay) {
+        const escEvent = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true });
+        document.dispatchEvent(escEvent);
+        const closeBtn = document.querySelector('.lucide-x, .lucide-chevron-left')?.closest('button');
+        if (closeBtn) (closeBtn as HTMLElement).click();
+        return;
+      }
+
+      // 2. Sequential Navigation
+      const path = locationRef.current;
+      if (path === "/" || path === "/welcome" || path === "/index") return;
+      navigate(-1);
+    };
+    (window as any).handleAndroidBack = handleBack;
+  }, [navigate]);
+
+  return null;
+};
+
 const RequireOnboarding = ({ children }: { children: React.ReactNode }) => {
   const isOnboarded = localStorage.getItem("ado-onboarded") === "true";
   if (!isOnboarded) return <Navigate to="/welcome" replace />;
@@ -41,6 +74,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <HashRouter>
+          <AndroidBackHandler />
           <Routes>
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/" element={<RequireOnboarding><Index /></RequireOnboarding>} />

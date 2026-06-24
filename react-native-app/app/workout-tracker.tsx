@@ -229,7 +229,12 @@ const WorkoutTracker = () => {
       </ScrollView>
 
       {/* Video Modal */}
-      <Modal visible={!!instructionExercise} transparent animationType="slide">
+      <Modal
+        visible={!!instructionExercise}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setInstructionExercise(null)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
              <View style={styles.modalHeader}>

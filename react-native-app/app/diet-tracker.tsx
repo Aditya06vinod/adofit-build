@@ -15,6 +15,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   BackHandler,
+  useWindowDimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -34,6 +35,7 @@ const { width } = Dimensions.get("window");
 
 const DietTracker = () => {
   const router = useRouter();
+  const bottomSheetHeight = useWindowDimensions().height * 0.85;
   const [dayOffset, setDayOffset] = useState(0);
   const [meals, setMeals] = useState<MealSlot[]>(getDefaultMeals());
   const [showAddFood, setShowAddFood] = useState<number | null>(null);
@@ -275,13 +277,18 @@ const DietTracker = () => {
       </ScrollView>
 
       {/* Add Food Modal */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setModalVisible(false)}
+      >
         <KeyboardAvoidingView
           style={styles.modalKeyboardWrapper}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
           <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
+            <View style={[styles.modalContent, { height: bottomSheetHeight }]}>
               <View style={styles.modalDragHandle} />
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Add Food</Text>
@@ -373,7 +380,7 @@ const styles = StyleSheet.create({
   addFoodText: { color: "#1C64F2", fontWeight: "bold", fontSize: 12, marginLeft: 4 },
   modalKeyboardWrapper: { flex: 1 },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: "#1E293B", height: Math.round(Dimensions.get('window').height * 0.85), borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, overflow: 'hidden' },
+  modalContent: { backgroundColor: "#1E293B", borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, overflow: 'hidden' },
   modalDragHandle: { width: 40, height: 4, backgroundColor: '#475569', borderRadius: 2, alignSelf: 'center', marginBottom: 12 },
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
   modalTitle: { color: "white", fontSize: 18, fontWeight: "bold" },

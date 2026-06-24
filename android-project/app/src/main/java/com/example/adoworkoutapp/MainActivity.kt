@@ -5,12 +5,14 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.os.Bundle
+import android.view.KeyEvent
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -50,6 +52,32 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                val currentUrl = webView?.url ?: ""
+                
+                when {
+                    // If in Diet Tracker (Diary), go to Quick Log instead of jumping to Home
+                    currentUrl.contains("#/diet") && !currentUrl.contains("diet-insight") -> {
+                        webView?.evaluateJavascript("window.location.hash = '#/log'", null)
+                    }
+                    // If in Active Workout, go back to Workouts Explore page
+                    currentUrl.contains("#/workout-active") -> {
+                        webView?.evaluateJavascript("window.location.hash = '#/workouts'", null)
+                    }
+                    // Standard back navigation for other pages
+                    webView?.canGoBack() == true -> {
+                        webView?.goBack()
+                    }
+                    else -> {
+                        // Minimize the app to the Home screen instead of exiting
+                        moveTaskToBack(true)
+                    }
+                }
+            }
+        })
+
         setContent {
             AdoWorkoutAppTheme {
                 Surface(
@@ -61,17 +89,6 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
-        }
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        val wView = webView
-        if (wView != null && wView.canGoBack()) {
-            wView.goBack()
-        } else {
-            @Suppress("DEPRECATION")
-            super.onBackPressed()
         }
     }
 }
