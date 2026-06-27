@@ -11,6 +11,7 @@ import {
   SafeAreaView,
   StatusBar,
   Alert,
+  useWindowDimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -62,7 +63,18 @@ const exerciseInstructions: Record<string, { youtubeId: string; steps: string[] 
 
 const WorkoutTracker = () => {
   const router = useRouter();
-  const [exercises, setExercises] = useState<ActiveExercise[]>([]);
+  const { height: windowHeight } = useWindowDimensions();
+  const bottomSheetHeight = windowHeight * 0.85;
+  const [exercises, setExercises] = useState<ActiveExercise[]>([
+    {
+      id: "1",
+      name: "Bench Press",
+      notes: "",
+      sets: [
+        { id: "s1", type: "S", weight: "60", reps: "10", previous: "55kg x 10", completed: false }
+      ]
+    }
+  ]);
   const [timer, setTimer] = useState(0);
   const [instructionExercise, setInstructionExercise] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -236,7 +248,8 @@ const WorkoutTracker = () => {
         onRequestClose={() => setInstructionExercise(null)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { height: bottomSheetHeight }]}>
+             <View style={styles.modalDragHandle} />
              <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>{instructionExercise}</Text>
                 <TouchableOpacity onPress={() => setInstructionExercise(null)}>
@@ -460,14 +473,23 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.8)",
-    justifyContent: "center",
-    padding: 20,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
   },
   modalContent: {
     backgroundColor: "#1E293B",
-    borderRadius: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     padding: 20,
+    overflow: "hidden",
+  },
+  modalDragHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: "#475569",
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 12,
   },
   modalHeader: {
     flexDirection: "row",

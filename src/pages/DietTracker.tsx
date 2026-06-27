@@ -437,7 +437,8 @@ const DietTracker = () => {
           <div
             onClick={e => e.stopPropagation()}
             className="w-[90%] mx-auto rounded-t-3xl bg-card p-5 pb-8 animate-slide-up flex flex-col shadow-2xl"
-            style={{ height: '85vh', maxHeight: '85vh', marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
+           // This makes the modal much smaller/shorter without leaving a gap at the bottom
+           style={{ height: '800px', maxHeight: '900px', marginBottom: 'env(safe-area-inset-bottom, 0px)' }}
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between mb-4 shrink-0">
@@ -456,7 +457,6 @@ const DietTracker = () => {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
-                autoFocus
               />
               {search && (
                 <button onClick={() => setSearch("")} className="p-0.5">
