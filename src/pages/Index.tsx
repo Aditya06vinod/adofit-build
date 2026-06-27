@@ -147,6 +147,7 @@ const Index = () => {
   const userName = localStorage.getItem("ado-user-name") || "Alex Johnson";
 
   const today = new Date();
+  const todayKey = today.toISOString().split("T")[0];
   const dateString = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
   const dayOfWeekIndex = today.getDay();
   
@@ -159,6 +160,36 @@ const Index = () => {
   });
 
   const streak = useMemo(() => calculateStreak(activeDays), [activeDays]);
+
+  // Dynamic Data Calculations
+  const userWeight = parseInt(localStorage.getItem("ado-user-weight") || "70");
+  const calorieGoal = userWeight * 30 || 2100;
+  const proteinGoal = Math.round(userWeight * 2);
+
+  const dietTotals = useMemo(() => {
+    const saved = localStorage.getItem(`ado-diary-meals-${todayKey}`);
+    const meals = saved ? JSON.parse(saved) : [];
+    let eaten = 0, protein = 0;
+    meals.forEach((m: any) => m.entries.forEach((e: any) => {
+      eaten += e.food.calories * e.quantity;
+      protein += e.food.protein * e.quantity;
+    }));
+    return { eaten, protein };
+  }, [todayKey]);
+
+  const workoutTotals = useMemo(() => {
+    const saved = localStorage.getItem("ado-workout-log");
+    const logs = saved ? JSON.parse(saved) : [];
+    const todayLogs = logs.filter((l: any) => l.date === todayKey);
+    return todayLogs.reduce((acc: any, log: any) => ({
+      calories: acc.calories + (log.calories || 0),
+      duration: acc.duration + (log.duration || 0)
+    }), { calories: 0, duration: 0 });
+  }, [todayKey]);
+
+  const progressPercent = Math.min(1, dietTotals.eaten / calorieGoal) || 0;
+  const calorieBurnGoal = 500;
+  const activeTimeGoal = 60;
 
   const toggleDay = (index: number) => {
     triggerHaptic();
@@ -176,7 +207,6 @@ const Index = () => {
     });
   };
 
-  const progressPercent = 0.75;
   const angle = (progressPercent * 360 - 90) * (Math.PI / 180);
   const dotX = 50 + 40 * Math.cos(angle);
   const dotY = 50 + 40 * Math.sin(angle);
@@ -266,27 +296,39 @@ const Index = () => {
                 <Flame className="h-5 w-5 text-[#FF8A4C]" fill="currentColor" />
                 <span className="font-bold text-sm">Calories Burned</span>
               </div>
-              <span className="text-xs"><span className="font-bold text-sm">450</span><span className="text-muted-foreground">/600 kcal</span></span>
+              <span className="text-xs">
+                <span className="font-bold text-sm">{workoutTotals.calories}</span>
+                <span className="text-muted-foreground">/{calorieBurnGoal} kcal</span>
+              </span>
             </div>
             <div className="h-2 w-full bg-[#2A231E] rounded-full overflow-hidden">
-              <div className="h-full bg-[#FF8A4C] rounded-full" style={{ width: '75%' }}></div>
+              <div
+                className="h-full bg-[#FF8A4C] rounded-full transition-all duration-1000"
+                style={{ width: `${Math.min(100, (workoutTotals.calories / calorieBurnGoal) * 100)}%` }}
+              ></div>
             </div>
           </div>
 
           <div 
-            onClick={() => { triggerHaptic(10); navigate('/diet'); }}
+            onClick={() => { triggerHaptic(10); navigate('/workout'); }}
             className="bg-card rounded-[20px] p-5 border border-border/30 cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all"
-            title="Tap to log food"
+            title="Tap to log workout"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-[#A5C0F3]" />
                 <span className="font-bold text-sm">Active Time</span>
               </div>
-              <span className="text-xs"><span className="font-bold text-sm">48</span><span className="text-muted-foreground">/60 min</span></span>
+              <span className="text-xs">
+                <span className="font-bold text-sm">{workoutTotals.duration}</span>
+                <span className="text-muted-foreground">/{activeTimeGoal} min</span>
+              </span>
             </div>
             <div className="h-2 w-full bg-[#202532] rounded-full overflow-hidden">
-              <div className="h-full bg-[#A5C0F3] rounded-full" style={{ width: '80%' }}></div>
+              <div
+                className="h-full bg-[#A5C0F3] rounded-full transition-all duration-1000"
+                style={{ width: `${Math.min(100, (workoutTotals.duration / activeTimeGoal) * 100)}%` }}
+              ></div>
             </div>
           </div>
         </div>
@@ -303,7 +345,7 @@ const Index = () => {
               <div className="h-10 w-10 rounded-xl bg-[#2A1E18] flex items-center justify-center mb-5">
                 <UtensilsCrossed className="h-5 w-5 text-[#FF8A4C]" fill="currentColor" />
               </div>
-              <p className="text-[28px] font-extrabold leading-none mb-1.5">1,840</p>
+              <p className="text-[28px] font-extrabold leading-none mb-1.5">{Math.round(dietTotals.eaten).toLocaleString()}</p>
               <p className="text-[11px] text-muted-foreground">Calories (kcal)</p>
             </div>
             <div 
@@ -314,8 +356,8 @@ const Index = () => {
               <div className="h-10 w-10 rounded-xl bg-[#1C253C] flex items-center justify-center mb-5">
                 <Dumbbell className="h-5 w-5 text-[#4A85F6]" fill="currentColor" />
               </div>
-              <p className="text-[28px] font-extrabold leading-none mb-1.5">142g</p>
-              <p className="text-[11px] text-muted-foreground">Protein (Target 160g)</p>
+              <p className="text-[28px] font-extrabold leading-none mb-1.5">{Math.round(dietTotals.protein)}g</p>
+              <p className="text-[11px] text-muted-foreground">Protein (Target {proteinGoal}g)</p>
             </div>
           </div>
         </div>
